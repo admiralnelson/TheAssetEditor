@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using AssetManagement.GenericFormats.DataStructures.Managed;
@@ -23,6 +24,10 @@ namespace AssetManagement.AssetBuilders
         /// <returns>Internal RMV2 file class</returns>
         public static RmvFile ConvertToRmv2(List<PackedMesh> packedMeshes, AnimationFile skeletonFile)
         {
+
+          
+
+
             var materialFactory = MaterialFactory.Create();
 
             var lodCount = 4; // make 4 identical LODs for compatibility reasons
@@ -121,7 +126,7 @@ namespace AssetManagement.AssetBuilders
             rmv2Mesh.VertexList = new CommonVertex[packedInputMesh.Vertices.Count];
 
             rmv2Mesh.VertexList = MakeCommonVertices(vertexFormat, packedInputMesh, skeletonFile).ToArray();
-            rmv2Mesh.IndexList = packedInputMesh.Indices.ToArray();
+            rmv2Mesh.IndexList = Array.ConvertAll(packedInputMesh.Indices.ToArray(), input => (ushort)input);
 
             if (skeletonFile == null)
             {
@@ -183,7 +188,7 @@ namespace AssetManagement.AssetBuilders
                    packedInputMesh.Vertices[vertexIndex].Normal,
                    packedInputMesh.Vertices[vertexIndex].Uv,
                    packedInputMesh.Vertices[vertexIndex].Tangent,
-                   packedInputMesh.Vertices[vertexIndex].BiNormal,
+                   packedInputMesh.Vertices[vertexIndex].Bitangent,
                    skeletonFile);
             }
 
