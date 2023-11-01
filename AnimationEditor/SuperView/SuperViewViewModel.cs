@@ -1,10 +1,12 @@
-﻿using AnimationEditor.Common.ReferenceModel;
+﻿using System;
+using AnimationEditor.Common.ReferenceModel;
 using AnimationEditor.PropCreator.ViewModels;
 using AnimationMeta.Presentation;
 using CommonControls.Common;
 using CommonControls.FileTypes.PackFiles.Models;
 using CommonControls.Services;
 using Microsoft.Xna.Framework;
+using View3D.Animation;
 
 namespace AnimationEditor.SuperView
 {
@@ -53,7 +55,13 @@ namespace AnimationEditor.SuperView
 
             _asset = assetViewModel.Data;
             _asset.MetaDataChanged += UpdateMetaDataInfoFromAsset;
+            _asset.AnimationChanged += AnimationChanged;
             UpdateMetaDataInfoFromAsset(_asset);
+        }
+
+        private void AnimationChanged(AnimationClip newValue)
+        {
+            Console.WriteLine("test");
         }
 
         private void UpdateMetaDataInfoFromAsset(SceneObject asset)

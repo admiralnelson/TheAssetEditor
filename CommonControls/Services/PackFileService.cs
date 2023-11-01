@@ -476,7 +476,8 @@ namespace CommonControls.Services
                 if (res != null)
                     return pf;
             }
-            _logger.Here().Information($"Unknown packfile container for {file.Name}");
+            if(file != null)
+                _logger.Here().Information($"Unknown packfile container for {file.Name}");
             return null;
         }
 

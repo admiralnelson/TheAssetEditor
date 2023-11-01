@@ -141,7 +141,7 @@
                     <filterdialog:CollapsableFilterControl VerticalContentAlignment="Center" DockPanel.Dock="Right"
                                     SelectedItem="{Binding MetaFileInformation.SelectedMetaFile, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     SearchItems="{Binding MetaFileInformation.MetaFiles, UpdateSourceTrigger=PropertyChanged}"     
-                                    OnSearch="{Binding MetaFileInformation.FiterByFullPath, UpdateSourceTrigger=PropertyChanged}"   
+                                    OnSearch="{Binding MetaFileInformation.FilterByFullPath, UpdateSourceTrigger=PropertyChanged}"   
                                     IsManipulationEnabled="False"
                                     LabelTotalWidth="0"   
                                     MaxHeight="400"
