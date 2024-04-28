@@ -3,6 +3,7 @@ using CommonControls.Common;
 using CommonControls.FileTypes.PackFiles.Models;
 using CommonControls.Services;
 using Microsoft.Xna.Framework.Graphics;
+using Monogame.WpfInterop.Common;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -21,6 +22,7 @@ namespace TextureEditor.ViewModels
     {
         PackFileService _pfs;
         PackFile _file;
+        EventHub _eventHub;
         TexturePreviewController _controller;
 
         public NotifyAttr<string> DisplayName { get; set; } = new NotifyAttr<string>();
@@ -36,9 +38,10 @@ namespace TextureEditor.ViewModels
             set => SetAndNotify(ref _viewModel, value);
         }
 
-        public TextureEditorViewModel(PackFileService pfs)
+        public TextureEditorViewModel(PackFileService pfs, EventHub eventHub)
         {
             _pfs = pfs;
+            _eventHub = eventHub;
         }
 
         public void Load(PackFile file)
@@ -49,7 +52,7 @@ namespace TextureEditor.ViewModels
             var viewModel = new TexturePreviewViewModel();
             viewModel.ImagePath.Value = _pfs.GetFullPath(file);
 
-            _controller = new TexturePreviewController(_pfs.GetFullPath(file), viewModel, _pfs);
+            _controller = new TexturePreviewController(_pfs.GetFullPath(file), viewModel, _pfs, _eventHub);
             ViewModel = viewModel;
         }
 
@@ -72,6 +75,7 @@ namespace TextureEditor.ViewModels
 
     public class TexturePreviewController : IDisposable
     {
+        static EventHub _eventHub;
         PackFileService _packFileService;
         ResourceLibary _resourceLib;
         TextureToTextureRenderer _textureRenderer;
@@ -97,7 +101,7 @@ namespace TextureEditor.ViewModels
             TexturePreviewViewModel viewModel = new TexturePreviewViewModel();
             viewModel.ImagePath.Value = imagePath;
 
-            using (var controller = new TexturePreviewController(imagePath, viewModel, packFileService, meshObject))
+            using (var controller = new TexturePreviewController(imagePath, viewModel, packFileService, _eventHub, meshObject))
             {
                 var containingWindow = new ControllerHostWindow(false, ResizeMode.CanResize);
                 containingWindow.Title = "Texture Preview Window";
@@ -106,15 +110,16 @@ namespace TextureEditor.ViewModels
             }
         }
 
-        public TexturePreviewController(string imagePath, TexturePreviewViewModel viewModel, PackFileService packFileService, MeshObject meshObject = null)
+        public TexturePreviewController(string imagePath, TexturePreviewViewModel viewModel, PackFileService packFileService, EventHub eventHub, MeshObject meshObject = null)
         {
             _imagePath = imagePath;
             _viewModel = viewModel;
             _packFileService = packFileService;
 
             _mesh = meshObject;
+            _eventHub = eventHub;
 
-            _scene = new GameWorld(null, null);
+            _scene = new GameWorld(eventHub);
             _scene.Components.Add(new ResourceLibary(_scene, packFileService));
             _scene.ForceCreate();
 
