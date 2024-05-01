@@ -171,6 +171,8 @@ namespace CommonControls.Editors.AnimationPack
             }
 
             var fileName = AnimationPackItems.SelectedItem.FileName;
+            var converter = (AnimationBinWh3FileToXmlConverter)_activeConverter;
+            converter.AnimPackToValidate = _packFile;
             var bytes = _activeConverter.ToBytes(SelectedItemViewModel.Text, fileName, _pfs, out var error);
 
             if (bytes == null || error != null)
