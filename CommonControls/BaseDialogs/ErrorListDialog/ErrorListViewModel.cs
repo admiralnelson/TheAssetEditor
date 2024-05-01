@@ -21,6 +21,8 @@ namespace CommonControls.BaseDialogs.ErrorListDialog
             public string ItemName { get; set; }
             public string Description { get; set; }
             public bool IsError { get; set; } = false;
+            public bool IsWarning { get; set; } = false;
+
         }
 
 
@@ -40,7 +42,7 @@ namespace CommonControls.BaseDialogs.ErrorListDialog
 
             public ErrorListDataItem Warning(string itemName, string description)
             {
-                var item = new ErrorListDataItem() { ErrorType = "Warning", ItemName = itemName, Description = description, IsError = true };
+                var item = new ErrorListDataItem() { ErrorType = "Warning", ItemName = itemName, Description = description, IsWarning = true };
                 Errors.Add(item);
                 return item;
             }
