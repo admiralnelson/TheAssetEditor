@@ -150,7 +150,7 @@ namespace GameWorld.Core.Components.Selection
                         //var parentBoneMatrix = Skeleton.GetAnimatedWorldTranform(parentIndex) * Matrix.CreateScale(ScaleMult);
                         //_lineRenderer.AddLine(Vector3.Transform(currentBoneMatrix.Translation, parentWorld), Vector3.Transform(parentBoneMatrix.Translation, parentWorld));
                         var bone = currentFrame.GetSkeletonAnimatedWorld(skeleton, boneIdx);
-                        bone.Decompose(out var _, out var _, out var trans);
+                        //bone.Decompose(out var _, out var _, out var trans);
                         _renderEngine.AddRenderLines(LineHelper.CreateCube(Matrix.CreateScale(0.06f) * bone * renderMatrix * parentWorld, Color.Red));
                     }
                 }

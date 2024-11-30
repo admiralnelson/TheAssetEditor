@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using AnimationEditor.MountAnimationCreator.ViewModels;
+using Editors.AnimationVisualEditors.AnimationKeyframeEditor;
 using Editors.Shared.Core.Common;
 using Editors.Shared.Core.Common.AnimationPlayer;
 using Editors.Shared.Core.Common.BaseControl;
@@ -36,6 +37,7 @@ namespace AnimationEditor.AnimationKeyframeEditor
         private CopyPastePose _copyPastePose;
         private CopyPasteFromClipboardPose _copyPasteClipboardPose;
         private InterpolateBetweenPose _interpolateBetweenPose;
+        private AnimationDockingToHandPosition _dockingToHandPosition;
 
         public SelectionComponent SelectionComponent { get => _selectionComponent; private set { _selectionComponent = value; } }
         private SelectionComponent _selectionComponent;
@@ -219,6 +221,7 @@ namespace AnimationEditor.AnimationKeyframeEditor
             _copyPastePose = new(this);
             _copyPasteClipboardPose = new(this);
             _interpolateBetweenPose = new(this);
+            _dockingToHandPosition = new(this);
         }
 
         internal void Create(SceneObject rider, SceneObject mount, SceneObject newAnimation)
@@ -717,6 +720,11 @@ namespace AnimationEditor.AnimationKeyframeEditor
             var bytes = AnimationFile.ConvertToBytes(animFile);
             SaveHelper.SaveAs(_pfs, bytes, ".anim");
             IsDirty.Value = false;
+        }
+
+        public void SetWeaponDocking1RightHand()
+        {
+            _dockingToHandPosition.SetTheBonePositionOfRightHandDock();
         }
     }
 }

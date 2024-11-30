@@ -285,6 +285,10 @@
         </Grid>
 
         <Grid DockPanel.Dock="Top" Margin="5,5,5,0">
+            <Button Content="Move docking 1 to right hand"  Click="{s:MethodBinding SetWeaponDocking1RightHand}" Margin="0,0,2,0"/>
+        </Grid>
+
+        <Grid DockPanel.Dock="Top" Margin="5,5,5,0">
             <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
         </Grid>
 

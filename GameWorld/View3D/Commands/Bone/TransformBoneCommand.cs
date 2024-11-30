@@ -40,6 +40,34 @@ namespace GameWorld.Core.Commands.Bone
             _oldFrame = _boneSelectionState.CurrentAnimation.DynamicFrames[_currentFrame].Clone();
         }
 
+        public void ReplaceTransformationTranslation(Matrix newTransform)
+        {
+            if (_selectedBones.Count == 0) return;
+
+            foreach (var selectedBone in _selectedBones)
+            {
+                var node = _boneSelectionState.RenderObject as Rmv2MeshNode;
+                var selectionState = (BoneSelectionState)_boneSelectionState;
+                var skeleton = selectionState.Skeleton;
+                var animationPlayer = node.AnimationPlayer;
+                var currentAnimFrame = animationPlayer.GetCurrentAnimationFrame();
+
+                // Get the parent bone's world transform
+                var parentBoneTransform = selectionState.Skeleton.GetAnimatedWorldTranform(skeleton.GetParentBoneIndex(selectedBone));
+                var inverseParentTransform = Matrix.Invert(parentBoneTransform);
+                var modifiedTransform = _boneSelectionState.CurrentAnimation.DynamicFrames[_currentFrame].Clone();
+
+
+                modifiedTransform.Position[selectedBone] = newTransform.Translation;
+
+                // Set the local transform
+                _boneSelectionState.CurrentAnimation.DynamicFrames[_currentFrame] = modifiedTransform;
+            }
+
+            _boneSelectionState.TriggerModifiedBoneEvent(_selectedBones);
+        }
+
+
         public void ApplyTransformation(Matrix newPosition, GizmoMode gizmoMode)
         {
             if (_selectedBones.Count == 0) return;
@@ -95,7 +123,7 @@ namespace GameWorld.Core.Commands.Bone
             _boneSelectionState.TriggerModifiedBoneEvent(_selectedBones);
         }
 
-        public Matrix GetSkeletonAnimatedBoneFromWorld(AnimationFrame frame, GameSkeleton gameSkeleton, int boneIndex, Matrix objectInWorldTransform)
+        public static Matrix GetSkeletonAnimatedBoneFromWorld(AnimationFrame frame, GameSkeleton gameSkeleton, int boneIndex, Matrix objectInWorldTransform)
         {
             var output = objectInWorldTransform * Matrix.Invert(frame.GetSkeletonAnimatedWorld(gameSkeleton, boneIndex));
             return output;

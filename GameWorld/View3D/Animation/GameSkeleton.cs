@@ -136,6 +136,30 @@ namespace GameWorld.Core.Animation
             return _worldTransform[boneIndex];
         }
 
+        public Matrix ComputeLocalTransform(int boneIndex)
+        {
+            // Get the world transform of the current bone
+            Matrix worldTransform = GetWorldTransform(boneIndex);
+
+            // Check for the parent bone
+            int parentBoneIndex = GetParentBoneIndex(boneIndex);
+            if(parentBoneIndex == 0)
+            {
+                return worldTransform;
+            }
+            else
+            {
+                // Get the parent's world transform
+                Matrix parentWorldTransform = GetWorldTransform(parentBoneIndex);
+                // Invert the parent's world transform
+                Matrix parentWorldInverse = Matrix.Invert(parentWorldTransform);
+                // Calculate the local transform
+                Matrix localTransform = worldTransform * parentWorldInverse;
+
+                return localTransform;
+            }
+        }
+
         public Matrix GetAnimatedWorldTranform(int boneIndex)
         {
             if (_frame != null)
@@ -143,6 +167,7 @@ namespace GameWorld.Core.Animation
 
             return GetWorldTransform(boneIndex); ;
         }
+
         public Matrix GetAnimatedTranform(int boneIndex)
         {
             if (_frame != null)
