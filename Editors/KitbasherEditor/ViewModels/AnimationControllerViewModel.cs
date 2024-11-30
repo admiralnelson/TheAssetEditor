@@ -1,4 +1,7 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using Editors.KitbasherEditor.Events;
 using Editors.Shared.Core.Services;
 using GameWorld.Core.Animation;
@@ -7,17 +10,14 @@ using Shared.Core.Misc;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.GameFormats.Animation;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Windows.Input;
 using static CommonControls.FilterDialog.FilterUserControl;
 using static Editors.Shared.Core.Services.SkeletonAnimationLookUpHelper;
 
-namespace KitbasherEditor.ViewModels
+namespace Editors.KitbasherEditor.ViewModels
 {
     public class AnimationControllerViewModel : NotifyPropertyChangedImpl
     {
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
 
         PackFile _skeletonPackFile;
         PackFile Animation;
@@ -62,15 +62,15 @@ namespace KitbasherEditor.ViewModels
         bool _isEnabled;
         public bool IsEnabled { get { return _isEnabled; } set { SetAndNotify(ref _isEnabled, value); OnEnableChanged(IsEnabled); } }
 
-        public AnimationControllerViewModel(PackFileService pf, 
-            SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper, 
-            EventHub eventHub,
+        public AnimationControllerViewModel(IPackFileService pf, 
+            SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper,
+            IEventHub eventHub,
             KitbasherRootScene kitbasherRootScene)
         {
             _packFileService = pf;
             _skeletonAnimationLookUpHelper = skeletonAnimationLookUpHelper;
             _kitbasherRootScene = kitbasherRootScene;
-            SkeletonList = _skeletonAnimationLookUpHelper.SkeletonFileNames;
+            SkeletonList = _skeletonAnimationLookUpHelper.GetAllSkeletonFileNames();
 
             _player = _kitbasherRootScene.Player;
             _player.OnFrameChanged += (currentFrame) => CurrentFrame = currentFrame + 1;

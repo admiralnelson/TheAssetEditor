@@ -15,7 +15,7 @@ namespace AssetEditor.Views
     public partial class MainWindow : Window
     {
         Point _lastMouseDown;
-        IEditorViewModel _draggedItem;
+        IEditorInterface _draggedItem;
 
         private readonly ApplicationSettingsService _applicationSettingsService;
         private readonly GameInformationFactory _gameInformationFactory;
@@ -61,7 +61,7 @@ namespace AssetEditor.Views
                     item.Focus();
                     item.Focusable = false;
 
-                    _draggedItem = item.DataContext as IEditorViewModel;
+                    _draggedItem = item.DataContext as IEditorInterface;
                 }
             }
             catch
@@ -100,12 +100,12 @@ namespace AssetEditor.Views
                 var pos = e.GetPosition(dropTargetItem);
                 var insertAfterTargetNode = pos.X - dropTargetItem.ActualWidth / 2 > 0;
 
-                if (DataContext is IDropTarget<IEditorViewModel, bool> dropContainer)
+                if (DataContext is IDropTarget<IEditorInterface, bool> dropContainer)
                 {
                     if (_draggedItem == null)
                         return;
 
-                    if (dropTargetItem?.DataContext is not IEditorViewModel dropTargetNode)
+                    if (dropTargetItem?.DataContext is not IEditorInterface dropTargetNode)
                         return;
 
                     if (dropContainer.AllowDrop(_draggedItem, dropTargetNode, insertAfterTargetNode))

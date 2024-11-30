@@ -1,93 +1,107 @@
 ﻿using System;
+using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Editors.AnimationMeta.Presentation;
 using Editors.Shared.Core.Common;
 using Editors.Shared.Core.Common.BaseControl;
+using Editors.Shared.Core.Common.ReferenceModel;
+using Editors.Shared.Core.Services;
 using Microsoft.Xna.Framework;
-using Shared.Core.Misc;
+using Shared.Core.Events;
+using Shared.Core.Events.Scoped;
 using Shared.Core.PackFiles;
-using Shared.Core.PackFiles.Models;
 
 namespace Editors.AnimationMeta.SuperView
 {
-    public class SuperViewViewModel : IHostedEditor<SuperViewViewModel>
+    public partial class SuperViewViewModel : EditorHostBase
     {
-        SceneObject _asset;
-        AnimationToolInput _debugDataToLoad;
+        SceneObjectViewModel _asset;
 
-        private readonly SceneObjectBuilder _sceneObjectBuilder;
-        private readonly SceneObjectViewModelBuilder _sceneObjectViewModelBuilder;
-        private readonly PackFileService _packFileService;
+        private readonly SceneObjectEditor _sceneObjectBuilder;
+        private readonly IPackFileService _packFileService;
+        private readonly SkeletonAnimationLookUpHelper _skeletonAnimationLookUpHelper;
+        private readonly IEventHub _eventHub;
+        private readonly IUiCommandFactory _uiCommandFactory;
 
-        public NotifyAttr<string> PersistentMetaFilePath { get; set; } = new NotifyAttr<string>("");
-        public NotifyAttr<string> MetaFilePath { get; set; } = new NotifyAttr<string>("");
+        [ObservableProperty] string _persistentMetaFilePath = "";
+        [ObservableProperty] string _metaFilePath = "";
+        [ObservableProperty] MetaDataEditorViewModel _persistentMetaEditor;
+        [ObservableProperty] MetaDataEditorViewModel _metaEditor;
 
-        public EditorViewModel PersistentMetaEditor { get; private set; }
-        public EditorViewModel MetaEditor { get; private set; }
+        public override Type EditorViewModelType => typeof(EditorView);
 
-        public string EditorName { get; } = "Super View";
-
-        public Type EditorViewModelType => typeof(EditorView);
-
-        public SuperViewViewModel(SceneObjectViewModelBuilder sceneObjectViewModelBuilder,
-            PackFileService packFileService,
-            SceneObjectBuilder sceneObjectBuilder,
-            CopyPasteManager copyPasteManager)
+        public SuperViewViewModel(
+            IPackFileService packFileService,
+            SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper,
+            IEventHub eventHub,
+            IUiCommandFactory uiCommandFactory,
+            SceneObjectEditor sceneObjectBuilder,
+            IEditorHostParameters editorHostParameters)
+            : base(editorHostParameters)
         {
-            _sceneObjectViewModelBuilder = sceneObjectViewModelBuilder;
+            DisplayName = "Super view";
             _packFileService = packFileService;
+            _skeletonAnimationLookUpHelper = skeletonAnimationLookUpHelper;
+            _eventHub = eventHub;
+            _uiCommandFactory = uiCommandFactory;
             _sceneObjectBuilder = sceneObjectBuilder;
 
-            PersistentMetaEditor = new EditorViewModel(_packFileService, copyPasteManager);
-            PersistentMetaEditor.EditorSavedEvent += PersistentMetaEditor_EditorSavedEvent;
-
-            MetaEditor = new EditorViewModel(_packFileService, copyPasteManager);
-            MetaEditor.EditorSavedEvent += MetaEditor_EditorSavedEvent;
+            Initialize();
+            eventHub.Register<ScopedFileSavedEvent>(this, OnFileSaved);
         }
 
-        public void SetDebugInputParameters(AnimationToolInput debugDataToLoad)
+        private void OnFileSaved(ScopedFileSavedEvent evnt)
         {
-            _debugDataToLoad = debugDataToLoad;
+            var newFile = _packFileService.FindFile(evnt.NewPath);
+            if (evnt.FileOwner == PersistentMetaEditor)
+                _sceneObjectBuilder.SetMetaFile(_asset.Data, _asset.Data.MetaData, newFile);
+            else if (evnt.FileOwner == MetaEditor)
+                _sceneObjectBuilder.SetMetaFile(_asset.Data, newFile, _asset.Data.PersistMetaData);
+            else
+                throw new Exception($"Unable to determine file owner when reciving a file save event in SuperView. Owner:{evnt.FileOwner}, File:{evnt.NewPath}");
         }
 
-        public void Initialize(EditorHost<SuperViewViewModel> editorOwner)
+        void Initialize()
         {
-            var assetViewModel = _sceneObjectViewModelBuilder.CreateAsset(true, "Root", Color.Black, _debugDataToLoad, true);
-            editorOwner.SceneObjects.Add(assetViewModel);
+            PersistentMetaEditor = new MetaDataEditorViewModel(_uiCommandFactory);
+            MetaEditor = new MetaDataEditorViewModel(_uiCommandFactory);
+            
+            var assetViewModel = _sceneObjectViewModelBuilder.CreateAsset(true, "Root", Color.Black,null, true);
+            SceneObjects.Add(assetViewModel);
+            
+            _asset = assetViewModel;
+            _asset.Data.MetaDataChanged += UpdateMetaDataInfoFromAsset;
+            UpdateMetaDataInfoFromAsset(_asset.Data);
+        }
 
-            _asset = assetViewModel.Data;
-            _asset.MetaDataChanged += UpdateMetaDataInfoFromAsset;
-            UpdateMetaDataInfoFromAsset(_asset);
+        public void Load(AnimationToolInput debugDataToLoad)
+        {
+            _sceneObjectBuilder.SetMesh(_asset.Data, debugDataToLoad.Mesh);
+
+            // Hack :(
+            if (debugDataToLoad.AnimationSlot != null)
+            {
+                var frag = _asset.FragAndSlotSelection.FragmentList.PossibleValues.FirstOrDefault(x => x.FullPath == debugDataToLoad.FragmentName);
+                _asset.FragAndSlotSelection.FragmentList.SelectedItem = frag;
+
+                var slot = _asset.FragAndSlotSelection.FragmentSlotList.PossibleValues.First(x => x.SlotName == debugDataToLoad.AnimationSlot.Value);
+                _asset.FragAndSlotSelection.FragmentSlotList.SelectedItem = slot;
+            }
         }
 
         private void UpdateMetaDataInfoFromAsset(SceneObject asset)
         {
-            PersistentMetaEditor.MainFile = asset.PersistMetaData;
-            PersistentMetaFilePath.Value = BuildMetaDataName(asset.PersistMetaData);
-
-            MetaEditor.MainFile = asset.MetaData;
-            MetaFilePath.Value = BuildMetaDataName(asset.MetaData);
+            PersistentMetaEditor.LoadFile(asset.PersistMetaData);
+            MetaEditor.LoadFile(asset.MetaData);
         }
 
-        string BuildMetaDataName(PackFile file)
+        public void RefreshAction() => _asset.Data.TriggerMeshChanged();
+
+        public override void Close()
         {
-            if (file == null)
-                return "";
-
-            var containerName = _packFileService.GetPackFileContainer(PersistentMetaEditor.MainFile).Name;
-            var filePath = PersistentMetaFilePath.Value = _packFileService.GetFullPath(PersistentMetaEditor.MainFile);
-            return $"[{containerName}]{filePath}";
+            _asset.Data.MetaDataChanged -= UpdateMetaDataInfoFromAsset;
+            _eventHub.UnRegister(this);
+            base.Close();
         }
-
-        private void MetaEditor_EditorSavedEvent(PackFile newFile)
-        {
-            _sceneObjectBuilder.SetMetaFile(_asset, newFile, _asset.PersistMetaData);
-        }
-
-        private void PersistentMetaEditor_EditorSavedEvent(PackFile newFile)
-        {
-            _sceneObjectBuilder.SetMetaFile(_asset, _asset.MetaData, newFile);
-        }
-
-        public void RefreshAction() => _asset.TriggerMeshChanged();
     }
 }

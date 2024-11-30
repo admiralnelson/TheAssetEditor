@@ -17,12 +17,12 @@ namespace Editors.KitbasherEditor.UiCommands
         public ActionEnabledRule EnabledRule => ActionEnabledRule.OneObjectSelected;
         public Hotkey HotKey { get; } = null;
 
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         private readonly SkeletonAnimationLookUpHelper _skeletonHelper;
         private readonly SelectionManager _selectionManager;
         private readonly IWindowFactory _windowFactory;
 
-        public OpenBmiToolCommand(PackFileService packFileService, SkeletonAnimationLookUpHelper skeletonHelper, SelectionManager selectionManager, IWindowFactory windowFactory)
+        public OpenBmiToolCommand(IPackFileService packFileService, SkeletonAnimationLookUpHelper skeletonHelper, SelectionManager selectionManager, IWindowFactory windowFactory)
         {
             _packFileService = packFileService;
             _skeletonHelper = skeletonHelper;
@@ -38,7 +38,7 @@ namespace Editors.KitbasherEditor.UiCommands
             if (meshNode != null)
             {
                 var skeletonName = meshNode.Geometry.SkeletonName;
-                var newSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(_packFileService, skeletonName);
+                var newSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(skeletonName);
                 var skeleton = new GameSkeleton(newSkeletonFile, null);
 
                 var window = _windowFactory.Create<BmiViewModel, BmiView>("BMI tool", 1200, 1100);

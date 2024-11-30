@@ -1,6 +1,5 @@
 ﻿using GameWorld.Core.Rendering.Materials.Serialization;
 using Shared.Core.PackFiles;
-using Shared.Core.PackFiles.Models;
 using Shared.Core.Services;
 using Shared.TestUtility;
 
@@ -12,7 +11,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void AddMaterial_NotExising()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
+            var pfs = new PackFileService(new StandardDialogProvider(), null);
 
             var materialPath0 = "content/material0.xml.material";
             var materialContent0 = "PreContent0<name> customMaterialName </name>PostContent0";
@@ -30,7 +29,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void AddMaterial_ExistingButDifferent()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
+            var pfs = new PackFileService(new StandardDialogProvider(), null);
 
             var materialPath0 = "content/material0.xml.material";
             var materialContent0 = "PreContent0<name> customMaterialName </name>PostContent0";
@@ -52,7 +51,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void AddMaterial_ExistingAndEqualButDifferentName()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
+            var pfs = new PackFileService(new StandardDialogProvider(), null);
 
             var materialPath0 = "content/material0.xml.material";
             var materialContent0 = "PreContent0<name> customMaterialName </name>PostContent0";
@@ -74,7 +73,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void AddMaterial_ExistingAndEqualWithWhiteSpaceDiff()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
+            var pfs = new PackFileService(new StandardDialogProvider(), null);
 
             var materialPath0 = "content/material0.xml.material";
             var materialContent0 = "PreContent0<name> customMaterialName </name>PostContent0";
@@ -96,7 +95,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void AddMaterial_ExistingAndEqualWithCapitalization()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
+            var pfs = new PackFileService(new StandardDialogProvider(), null);
 
             var materialPath0 = "content/material0.xml.material";
             var materialContent0 = "PreContent0<name> customMaterialName </name>PostContent0";
@@ -118,11 +117,10 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void LoadExistingMaterials()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
-            pfs.LoadFolderContainer(PathHelper.Folder("Karl_and_celestialgeneral_Pack"));
+            var pfs = PackFileSerivceTestHelper.CreateFromFolder(GameTypeEnum.Warhammer3, "Karl_and_celestialgeneral_Pack");
 
-            // Act
-            var repo = new WsMaterialRepository(pfs);
+             // Act
+             var repo = new WsMaterialRepository(pfs);
             var materialCount = repo.ExistingMaterialsCount();
 
             // Assert
@@ -133,8 +131,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void LoadExistingMaterials_AddComplexEqual()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
-            pfs.LoadFolderContainer(PathHelper.Folder("Karl_and_celestialgeneral_Pack"));
+            var pfs = PackFileSerivceTestHelper.CreateFromFolder(GameTypeEnum.Warhammer3, "Karl_and_celestialgeneral_Pack");
 
             var path = @"variantmeshes\wh_variantmodels\hu1\emp\emp_karl_franz\materials\emp_karl_franz_body_01_weighted2_alpha_off.xml.material";
             var content = PathHelper.GetFileContentAsString("Karl_and_celestialgeneral_Pack\\" + path);
@@ -154,8 +151,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void LoadExistingMaterials_AddDifferent()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
-            pfs.LoadFolderContainer(PathHelper.Folder("Karl_and_celestialgeneral_Pack"));
+            var pfs = PackFileSerivceTestHelper.CreateFromFolder(GameTypeEnum.Warhammer3, "Karl_and_celestialgeneral_Pack");
 
             var path = @"variantmeshes\wh_variantmodels\hu1\emp\emp_karl_franz\materials\emp_karl_franz_body_01_weighted2_alpha_off.xml.material";
             var content = PathHelper.GetFileContentAsString("Karl_and_celestialgeneral_Pack\\" + path) + "content is no longer equal";
@@ -175,8 +171,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void LoadExistingMaterials_AddDifferentOnlyInName()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
-            pfs.LoadFolderContainer(PathHelper.Folder("Karl_and_celestialgeneral_Pack"));
+            var pfs = PackFileSerivceTestHelper.CreateFromFolder(GameTypeEnum.Warhammer3, "Karl_and_celestialgeneral_Pack");
 
             var path = @"variantmeshes\wh_variantmodels\hu1\emp\emp_karl_franz\materials\emp_karl_franz_body_01_weighted2_alpha_off.xml.material";
             var content = PathHelper.GetFileContentAsString("Karl_and_celestialgeneral_Pack\\" + path);
@@ -199,7 +194,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         public void AddMaterial_NameMissingFromFile()
         {
             // Arrange 
-            var pfs = new PackFileService(new PackFileDataBase(), new ApplicationSettingsService(), new GameInformationFactory(), null, null, null);
+            var pfs = new PackFileService(new StandardDialogProvider(), null);
 
             var materialPath0 = "content/material0.xml.material";
             var materialContent0 = "PreContent0<nothing> customMaterialName </name>PostContent0";

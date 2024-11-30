@@ -18,7 +18,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.x'
+        dotnet-version: '9.x'
 
     - name: Install dependencies
       run: dotnet restore
@@ -26,5 +26,15 @@ jobs:
     - name: Build the project
       run: dotnet build AssetEditor\AssetEditor.csproj --no-restore
 
-    - name: Run tests
-      run: dotnet test Testing\E2EVerification\E2EVerification.csproj --no-restore --verbosity normal
+
+    - name: Run Shared.Core Tests
+      run: dotnet test Testing\Shared.Core.Test\Test.Shared.Core.csproj --no-restore --verbosity normal
+
+    - name: Run GameWorld.Core Tests
+      run: dotnet test Testing\GameWorld.Core.Test\Test.GameWorld.Core.csproj --no-restore --verbosity normal
+
+    - name: Run E2E Verification Tests
+      run: dotnet test Testing\E2EVerification\Test.E2EVerification.csproj --no-restore --verbosity normal
+
+    - name: Run Editors.ImportExport Tests
+      run: dotnet test Editors\ImportExportEditor\Test.ImportExport\Test.ImportExport.csproj --no-restore --verbosity normal

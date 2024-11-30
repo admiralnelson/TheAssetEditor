@@ -8,13 +8,15 @@ namespace AssetEditor.UiCommands
 {
     internal class OpenGamePackCommand : IUiCommand
     {
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
+        private readonly IPackFileContainerLoader _packFileContainerLoader;
         private readonly ApplicationSettingsService _applicationSettingsService;
         private readonly GameInformationFactory _gameInformationFactory;
 
-        public OpenGamePackCommand(PackFileService packFileService, ApplicationSettingsService applicationSettingsService, GameInformationFactory gameInformationFactory)
+        public OpenGamePackCommand(IPackFileService packFileService, IPackFileContainerLoader packFileContainerLoader, ApplicationSettingsService applicationSettingsService, GameInformationFactory gameInformationFactory)
         {
             _packFileService = packFileService;
+            _packFileContainerLoader = packFileContainerLoader;
             _applicationSettingsService = applicationSettingsService;
             _gameInformationFactory = gameInformationFactory;
         }
@@ -31,7 +33,8 @@ namespace AssetEditor.UiCommands
                 return;
             }
 
-            foreach (var packFile in _packFileService.Database.PackFiles)
+            var packFileContainer = _packFileService.GetAllPackfileContainers();
+            foreach (var packFile in packFileContainer)
             {
                 if (packFile.SystemFilePath == gamePath.Path)
                 {
@@ -42,7 +45,8 @@ namespace AssetEditor.UiCommands
 
             using (new WaitCursor())
             {
-                _packFileService.LoadAllCaFiles(gamePath.Path, _gameInformationFactory.GetGameById(game).DisplayName);
+                var res = _packFileContainerLoader.LoadAllCaFiles(game);
+                _packFileService.AddContainer(res);
             }
         }
     }

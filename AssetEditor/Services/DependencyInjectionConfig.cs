@@ -34,6 +34,7 @@ namespace AssetEditor.Services
                 new Editors.TextureEditor.DependencyInjectionContainer(),
                 new Editors.AnimationVisualEditors.DependencyInjectionContainer(),
                 new Editors.ImportExport.DependencyInjectionContainer(),
+                new Editor.VisualSkeletonEditor.DependencyInjectionContainer(),
 
                 // Host application
                 new DependencyInjectionContainer(),
@@ -47,7 +48,7 @@ namespace AssetEditor.Services
                 .UseDefaultServiceProvider(x=>ConfigureServiceOptions(forceValidateServiceScopes, x))
                 .Build();
 
-            RegisterTools(host.Services.GetService<IToolFactory>());
+            RegisterTools(host.Services.GetService<IEditorDatabase>());
             return host.Services;
         }
 
@@ -70,7 +71,7 @@ namespace AssetEditor.Services
             replaceServices?.Invoke(services);
         }
 
-        void RegisterTools(IToolFactory factory)
+        void RegisterTools(IEditorDatabase factory)
         {
             foreach (var container in _dependencyContainers)
                 container.RegisterTools(factory);

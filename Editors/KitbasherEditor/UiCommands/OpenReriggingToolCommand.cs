@@ -1,9 +1,9 @@
 ﻿using System.Windows;
 using CommonControls.Editors.BoneMapping.View;
+using Editors.KitbasherEditor.ViewModels;
 using Editors.Shared.Core.Services;
 using GameWorld.Core.Components.Selection;
 using GameWorld.Core.SceneNodes;
-using KitbasherEditor.ViewModels;
 using KitbasherEditor.ViewModels.MenuBarViews;
 using KitbasherEditor.ViewModels.MeshFitter;
 using Shared.Core.PackFiles;
@@ -24,11 +24,11 @@ namespace Editors.KitbasherEditor.UiCommands
         private readonly KitbasherRootScene _kitbasherRootScene;
         private readonly SelectionManager _selectionManager;
 
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         private readonly SkeletonAnimationLookUpHelper _skeletonHelper;
         private readonly IWindowFactory _windowFactory;
 
-        public OpenReriggingToolCommand(KitbasherRootScene kitbasherRootScene, SelectionManager selectionManager, PackFileService packFileService, SkeletonAnimationLookUpHelper skeletonHelper, IWindowFactory windowFactory)
+        public OpenReriggingToolCommand(KitbasherRootScene kitbasherRootScene, SelectionManager selectionManager, IPackFileService packFileService, SkeletonAnimationLookUpHelper skeletonHelper, IWindowFactory windowFactory)
         {
             _kitbasherRootScene = kitbasherRootScene;
             _selectionManager = selectionManager;
@@ -42,7 +42,7 @@ namespace Editors.KitbasherEditor.UiCommands
             var targetSkeletonName = _kitbasherRootScene.Skeleton.SkeletonName;
             var state = _selectionManager.GetState<ObjectSelectionState>();
 
-            var existingSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(_packFileService, targetSkeletonName);
+            var existingSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(targetSkeletonName);
             if (existingSkeletonFile == null)
                 throw new Exception("TargetSkeleton not found -" + targetSkeletonName);
 
@@ -64,7 +64,7 @@ namespace Editors.KitbasherEditor.UiCommands
             }
 
             var selectedMeshSkeleton = selectedMeshSkeletons.First();
-            var newSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(_packFileService, selectedMeshSkeleton);
+            var newSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(selectedMeshSkeleton);
 
             // Ensure all the bones have valid stuff
             var allUsedBoneIndexes = new List<byte>();

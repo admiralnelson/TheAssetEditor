@@ -1,22 +1,20 @@
 ﻿using System.Collections.ObjectModel;
-using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Editors.KitbasherEditor.Events;
-using GameWorld.Core.Commands;
 using GameWorld.Core.Components;
 using GameWorld.Core.Components.Selection;
 using GameWorld.Core.SceneNodes;
 using KitbasherEditor.ViewModels.SceneExplorerNodeViews;
 using Shared.Core.Events;
-using Shared.Core.Misc;
 
 namespace Editors.KitbasherEditor.ViewModels.SceneExplorer
 {
     // Improve using this: https://stackoverflow.com/questions/63110566/multi-select-with-multiple-level-in-wpf-treeview
 
-    public class SceneExplorerViewModel : NotifyPropertyChangedImpl, IDisposable
+    public partial class SceneExplorerViewModel : ObservableObject, IDisposable
     {
         private readonly SceneManager _sceneManager;
-        private readonly EventHub _eventHub;
+        private readonly IEventHub _eventHub;
         private readonly SelectionManager _selectionManager;
         bool _ignoreSelectionChanges = false;
 
@@ -27,7 +25,7 @@ namespace Editors.KitbasherEditor.ViewModels.SceneExplorer
         public SceneExplorerViewModel(
             SelectionManager selectionManager,
             SceneManager sceneManager,
-            EventHub eventHub,
+            IEventHub eventHub,
             SceneExplorerContextMenuHandler contextMenuHandler)
         {
             _sceneManager = sceneManager;
@@ -62,37 +60,6 @@ namespace Editors.KitbasherEditor.ViewModels.SceneExplorer
             {
                 SelectedObjects.CollectionChanged -= OnSceneExplorerSelectionChanged;
                 _ignoreSelectionChanges = true;
-
-                try
-                {
-                    if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add && Keyboard.IsKeyDown(Key.LeftShift))
-                    {
-                        // This is to handle selecting items inbetween others while holding LeftShift
-                        var newItem = e.NewItems[0] as ISceneNode;
-                        var newItemIndex = newItem.Parent.Children.IndexOf(newItem);
-                        var selectedWithoutNewItem = SelectedObjects.Except(new List<ISceneNode>() { newItem });
-
-                        if (selectedWithoutNewItem.Any())
-                        {
-                            var existingSelectionIndex = selectedWithoutNewItem
-                                .Select(obj => newItem.Parent.Children.IndexOf(obj))
-                                .OrderBy(index => Math.Abs(index - newItemIndex))
-                                .First();
-
-                            var isAscending = newItemIndex < existingSelectionIndex;
-                            var min = isAscending ? newItemIndex : existingSelectionIndex;
-                            var max = isAscending ? existingSelectionIndex : newItemIndex;
-
-                            for (var i = min; i < max; i++)
-                            {
-                                var element = newItem.Parent.Children.ElementAt(i);
-                                if (SelectedObjects.Contains(element) == false)
-                                    SelectedObjects.Add(element);
-                            }
-                        }
-                    }
-                }
-                catch { }
 
                 // Select the objects in the game world
                 var objectState = new ObjectSelectionState();

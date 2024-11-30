@@ -14,12 +14,12 @@ namespace Editors.Audio.Storage
 {
     public class DatLoader
     {
-        private readonly PackFileService _pfs;
+        private readonly IPackFileService _pfs;
         private readonly ApplicationSettingsService _applicationSettingsService;
 
         private Dictionary<uint, string> _nameLookUp { get; set; } = new Dictionary<uint, string>();
 
-        public DatLoader(PackFileService pfs, ApplicationSettingsService applicationSettingsService)
+        public DatLoader(IPackFileService pfs, ApplicationSettingsService applicationSettingsService)
         {
             _pfs = pfs;
             _applicationSettingsService = applicationSettingsService;
@@ -44,11 +44,11 @@ namespace Editors.Audio.Storage
             AddNames(wh3DbNameList);
 
             // Add all the bnk file names 
-            var bnkFiles = _pfs.FindAllWithExtention(".bnk");
+            var bnkFiles = PackFileServiceUtility.FindAllWithExtention(_pfs, ".bnk");
             var bnkNames = bnkFiles.Select(x => x.Name.Replace(".bnk", "")).ToArray();
             AddNames(bnkNames);
 
-            var wwiseIdFiles = _pfs.FindAllWithExtention(".wwiseids");
+            var wwiseIdFiles = PackFileServiceUtility.FindAllWithExtention(_pfs, ".wwiseids");
             foreach (var item in wwiseIdFiles)
             {
                 var data = Encoding.UTF8.GetString(item.DataSource.ReadData());
@@ -60,12 +60,12 @@ namespace Editors.Audio.Storage
             return _nameLookUp;
         }
 
-        SoundDatFile LoadDatFiles(PackFileService pfs, out List<string> failedFiles)
+        SoundDatFile LoadDatFiles(IPackFileService pfs, out List<string> failedFiles)
         {
             var datDumpsFolderName = $"{DirectoryHelper.Temp}\\DatDumps";
             DirectoryHelper.EnsureCreated(datDumpsFolderName);
 
-            var datFiles = pfs.FindAllWithExtention(".dat");
+            var datFiles = PackFileServiceUtility.FindAllWithExtention(pfs, ".dat");
             datFiles = PackFileUtil.FilterUnvantedFiles(pfs, datFiles, new[] { "bank_splits.dat", "campaign_music.dat", "battle_music.dat", "icudt61l.dat" }, out var removedFiles);
 
             var failedDatParsing = new List<(string, string)>();

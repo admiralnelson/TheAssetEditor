@@ -15,7 +15,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
     internal class MaterialToWsMaterialSerializerTests
     {
         PackFileContainer _outputPack;
-        PackFileService _pfs;
+        IPackFileService _pfs;
 
         MaterialToWsMaterialSerializer _wsMaterialSerializer;
         CapabilityMaterial _testMaterial;
@@ -25,9 +25,9 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
         {
             var selectedGame = GameTypeEnum.Warhammer3;
             var appSettings = new ApplicationSettingsService(selectedGame);
-            _pfs = new PackFileService(new PackFileDataBase(), appSettings, new GameInformationFactory(), null, null, null);
-            _pfs.LoadFolderContainer(PathHelper.Folder("Karl_and_celestialgeneral_Pack"));
-            var saveHelper = new PackFileSaveService(_pfs);
+            _pfs = PackFileSerivceTestHelper.CreateFromFolder(selectedGame, "Karl_and_celestialgeneral_Pack");
+
+            var saveHelper = new FileSaveService(_pfs, null);
             var materialRepo = new WsMaterialRepository(_pfs);
             _outputPack = _pfs.CreateNewPackFileContainer("output", PackFileCAType.MOD, true);
             var materialFactory = new CapabilityMaterialFactory(appSettings, null);
@@ -39,6 +39,7 @@ namespace GameWorld.Core.Test.Rendering.Materials.Serialization
             _testMaterial.GetCapability<MetalRoughCapability>().MaterialMap.TexturePath = $"texturePath/{TextureType.MaterialMap}.dds";
             _testMaterial.GetCapability<MetalRoughCapability>().BaseColour.TexturePath = $"texturePath/{TextureType.BaseColour}.dds";
         }
+
 
         [Test]
         public void ProsessMaterial()

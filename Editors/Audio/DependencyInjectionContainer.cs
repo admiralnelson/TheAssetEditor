@@ -12,9 +12,9 @@ using Editors.Audio.Storage;
 using Editors.Audio.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Core.DependencyInjection;
+using Shared.Core.DevConfig;
 using Shared.Core.ToolCreation;
 using Shared.GameFormats.WWise;
-
 
 namespace Editors.Audio
 {
@@ -53,15 +53,28 @@ namespace Editors.Audio
             serviceCollection.AddScoped<CompilerService>();
             serviceCollection.AddScoped<ProjectLoader>();
             serviceCollection.AddScoped<AudioFileImporter>();
-            serviceCollection.AddScoped<Editors.Audio.BnkCompiler.Compiler>();
+            serviceCollection.AddScoped<BnkCompiler.Compiler>();
             serviceCollection.AddScoped<ResultHandler>();
+
+            RegisterAllAsInterface<IDeveloperConfiguration>(serviceCollection, ServiceLifetime.Transient);
         }
 
-        public override void RegisterTools(IToolFactory factory)
+        public override void RegisterTools(IEditorDatabase factory)
         {
-            factory.RegisterTool<AudioExplorerViewModel, AudioExplorerView>();
-            factory.RegisterTool<CompilerViewModel, CompilerView>();
-            factory.RegisterTool<AudioEditorViewModel, AudioEditorView>();
+            EditorInfoBuilder
+                .Create<AudioExplorerViewModel, AudioExplorerView>(EditorEnums.AudioExplorer_Editor)
+                .AddToToolbar("Audio Exporer")
+                .Build(factory);
+
+            EditorInfoBuilder
+                .Create<CompilerViewModel, CompilerView>(EditorEnums.AudioCompiler_Editor)
+                .AddToToolbar("Audio Compiler")
+                .Build(factory);
+
+            EditorInfoBuilder
+                .Create<AudioEditorViewModel, AudioEditorView>(EditorEnums.Audio_Editor)
+                .AddToToolbar("Audio Editor")
+                .Build(factory);
         }
     }
 }

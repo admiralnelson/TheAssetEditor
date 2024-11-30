@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using Shared.Core.ByteParsing;
 using Shared.Core.ErrorHandling;
 using Shared.Core.PackFiles;
@@ -140,7 +141,14 @@ namespace Shared.GameFormats.Animation
             }
         }
 
-        static AnimationHeader GetAnimationHeader(ByteChunk chunk)
+       public static string GetAnimationName(byte[] animationFileByteBuffer)
+       {
+            var offsetToName = 12;
+            var stringLenth = BitConverter.ToInt16(animationFileByteBuffer, offsetToName);
+            return Encoding.UTF8.GetString(animationFileByteBuffer, 12+2, stringLenth);
+        }
+
+        public static AnimationHeader GetAnimationHeader(ByteChunk chunk)
         {
             if (chunk.BytesLeft == 0)
                 throw new Exception("Trying to load animation header with no data, chunk size = 0");
@@ -526,7 +534,7 @@ namespace Shared.GameFormats.Animation
         }
 
         // Move this somewhere else - something like an animationManipulationService/AnimationEditor.
-        public void ConvertToVersion(uint newAnimFormat, AnimationFile skeleton, PackFileService pfs)
+        public void ConvertToVersion(uint newAnimFormat, AnimationFile skeleton, IPackFileService pfs)
         {
             Header.Version = newAnimFormat;
             RemoveOptimizations(skeleton);

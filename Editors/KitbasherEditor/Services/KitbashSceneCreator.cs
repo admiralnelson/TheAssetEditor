@@ -1,21 +1,26 @@
-﻿using GameWorld.Core.Components;
+﻿using System.IO;
+using Editors.KitbasherEditor.ViewModels;
+using GameWorld.Core.Components;
 using GameWorld.Core.SceneNodes;
 using GameWorld.Core.Services;
 using GameWorld.Core.Services.SceneSaving;
 using GameWorld.Core.Utility;
-using KitbasherEditor.ViewModels;
 using Serilog;
 using Shared.Core.ErrorHandling;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
+using Shared.Core.Services;
 using Shared.GameFormats.RigidModel;
+using Shared.GameFormats.WsModel;
+using Xceed.Wpf.AvalonDock.Layout;
 
 namespace Editors.KitbasherEditor.Services
 {
     public class KitbashSceneCreator
     {
         private readonly ILogger _logger = Logging.Create<KitbashSceneCreator>();
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
+        private readonly ApplicationSettingsService _settingsService;
         private readonly KitbasherRootScene _kitbasherRootScene;
         private readonly ComplexMeshLoader _complexMeshLoader;
         private readonly SceneManager _sceneManager;
@@ -23,14 +28,16 @@ namespace Editors.KitbasherEditor.Services
         private readonly GeometrySaveSettings _saveSettings;
 
         public KitbashSceneCreator(
+            ApplicationSettingsService settingsService,
             KitbasherRootScene kitbasherRootScene,
             ComplexMeshLoader complexMeshLoader,
             SceneManager sceneManager,
-            PackFileService packFileService,
+            IPackFileService packFileService,
             Rmv2ModelNodeLoader rmv2ModelNodeLoader,
             GeometrySaveSettings saveSettings)
         {
             _packFileService = packFileService;
+            _settingsService = settingsService;
             _kitbasherRootScene = kitbasherRootScene;
             _complexMeshLoader = complexMeshLoader;
             _sceneManager = sceneManager;
@@ -46,32 +53,47 @@ namespace Editors.KitbasherEditor.Services
 
             // Load the opened model
             var modelFullPath = _packFileService.GetFullPath(file);
-            var rmv = ModelFactory.Create().Load(file.DataSource.ReadData());
-            var lodNodes = _rmv2ModelNodeLoader.CreateModelNodesFromFile(rmv, modelFullPath, _kitbasherRootScene.Player);
+
+            WsModelFile? wsModel = null;
+            RmvFile rmv;
+            if (Path.GetExtension(modelFullPath).ToLower() == ".wsmodel")
+            {
+                wsModel = new WsModelFile(file);
+                var rmvPackFile = _packFileService.FindFile(wsModel.GeometryPath);
+                rmv = ModelFactory.Create().Load(rmvPackFile.DataSource.ReadData());
+            }
+            else
+            {
+                rmv = ModelFactory.Create().Load(file.DataSource.ReadData());
+            }
+
+            var lodNodes = _rmv2ModelNodeLoader.CreateModelNodesFromFile(rmv, modelFullPath, _kitbasherRootScene.Player, false, wsModel);
             mainNode.Children.Clear();
             foreach(var lodNode in lodNodes)
                 mainNode.AddObject(lodNode);
 
-
             _kitbasherRootScene.SetSkeletonFromName(rmv.Header.SkeletonName);
 
             var fullPath = _packFileService.GetFullPath(file);
-            _saveSettings.OutputName = fullPath;
+            var dirPath = Path.GetDirectoryName(fullPath);
+            if (string.IsNullOrEmpty(dirPath) == false)
+                _saveSettings.OutputName = dirPath + "\\";
+            _saveSettings.OutputName+= Path.GetFileNameWithoutExtension(fullPath) + ".rigid_model_v2";
             _saveSettings.InitializeLodSettings(rmv.LodHeaders);
         }
 
         public void LoadReference(PackFile file)
         {
             _logger.Here().Information($"Loading reference model - {_packFileService.GetFullPath(file)}");
-            var result = LoadModel(file);
+            var result = LoadModel(file, _settingsService.CurrentSettings.OnlyLoadLod0ForReferenceMeshes);
 
             var referenceMeshNode = _sceneManager.GetNodeByName<GroupNode>(SpecialNodes.ReferenceMeshs);
             referenceMeshNode.AddObject(result!);
         }
 
-        SceneNode? LoadModel(PackFile file)
+        SceneNode? LoadModel(PackFile file, bool onlyLoadRootNode)
         {
-            var loadedNode = _complexMeshLoader.Load(file, _kitbasherRootScene.Player);
+            var loadedNode = _complexMeshLoader.Load(file, _kitbasherRootScene.Player, onlyLoadRootNode);
             if (loadedNode == null)
             {
                 _logger.Here().Error("Unable to load model");
@@ -86,6 +108,7 @@ namespace Editors.KitbasherEditor.Services
 
                 if (node is Rmv2MeshNode mesh && string.IsNullOrWhiteSpace(mesh.AttachmentPointName) == false)
                 {
+                    mesh.AnimationPlayer = _kitbasherRootScene.Player;
                     if (_kitbasherRootScene.Skeleton != null)
                     {
                         var boneIndex = _kitbasherRootScene.Skeleton.GetBoneIndexByName(mesh.AttachmentPointName);

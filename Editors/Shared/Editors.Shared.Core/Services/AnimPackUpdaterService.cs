@@ -1,7 +1,7 @@
 ﻿using System.IO;
+using System.Windows;
 using Shared.Core.ErrorHandling;
 using Shared.Core.PackFiles;
-using Shared.Core.PackFiles.Models;
 using Shared.Core.Services;
 using Shared.GameFormats.AnimationPack;
 using Shared.GameFormats.AnimationPack.AnimPackFileTypes;
@@ -11,15 +11,21 @@ namespace Editors.Shared.Core.Services
 {
     public class AnimPackUpdaterService
     {
-        private readonly PackFileService _pfs;
+        private readonly IPackFileService _pfs;
 
-        public AnimPackUpdaterService(PackFileService pfs)
+        public AnimPackUpdaterService(IPackFileService pfs)
         {
             _pfs = pfs;
         }
 
-        public void Process(PackFileContainer packFileContainer, GameTypeEnum existingPackVersion = GameTypeEnum.Warhammer2, GameTypeEnum outputFormat = GameTypeEnum.Warhammer3)
+        public void Process(GameTypeEnum existingPackVersion = GameTypeEnum.Warhammer2, GameTypeEnum outputFormat = GameTypeEnum.Warhammer3)
         {
+            var packFileContainer = _pfs.GetEditablePack();
+            if (packFileContainer == null)
+            {
+                MessageBox.Show("No editable pack selected");
+                return;
+            }
             var errorList = new ErrorList();
 
             if (outputFormat != GameTypeEnum.Warhammer3)
@@ -28,7 +34,7 @@ namespace Editors.Shared.Core.Services
             if (existingPackVersion != GameTypeEnum.Warhammer2)
                 throw new Exception($"{outputFormat} selected as input, only Warhammer 2 is currently supported");
 
-            var animPackFiles = _pfs.FindAllWithExtention(".animpack", packFileContainer);
+            var animPackFiles = PackFileServiceUtility.FindAllWithExtention(_pfs, ".animpack", packFileContainer);
             var animPacks = animPackFiles.Select(x => AnimationPackSerializer.Load(x, _pfs, GameTypeEnum.Warhammer2)).ToArray();
 
             if (animPacks.Length == 0)

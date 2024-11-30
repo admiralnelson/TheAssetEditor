@@ -10,13 +10,14 @@ using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.GameFormats.Animation;
 using Shared.Ui.Common;
+using static Shared.Core.PackFiles.IPackFileService;
 
 namespace CommonControls.Editors.AnimationBatchExporter
 {
     public class AnimationBatchExportViewModel
     {
         ILogger _logger = Logging.Create<AnimationBatchExportViewModel>();
-        PackFileService _pfs;
+        IPackFileService _pfs;
 
         public ObservableCollection<PackFileListItem> PackfileList { get; set; } = new ObservableCollection<PackFileListItem>();
         public ObservableCollection<uint> PossibleOutputFormats { get; set; } = new ObservableCollection<uint>() { 5, 6, 7 };
@@ -24,7 +25,7 @@ namespace CommonControls.Editors.AnimationBatchExporter
 
         SkeletonAnimationLookUpHelper _skeletonAnimationLookUpHelper;
 
-        public AnimationBatchExportViewModel(PackFileService pfs, SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper)
+        public AnimationBatchExportViewModel(IPackFileService pfs, SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper)
         {
             _pfs = pfs;
             _skeletonAnimationLookUpHelper = skeletonAnimationLookUpHelper;
@@ -61,18 +62,19 @@ namespace CommonControls.Editors.AnimationBatchExporter
 
                     _logger.Here().Information($"Processing packfile container {packfile.Name}");
 
-                    var animFiles = _pfs.FindAllWithExtention(".anim", packfile.Container);
+                    var animFiles = PackFileServiceUtility.FindAllWithExtention(_pfs, ".anim", packfile.Container);
 
                     _logger.Here().Information($"Converting animations {animFiles.Count}");
                     var convertedAnimFiles = ConvertAnimFiles(animFiles, SelectedOutputFormat.Value, errorList);
 
                     _logger.Here().Information($"saving animation files");
-                    _pfs.AddFilesToPack(_pfs.GetEditablePack(),
-                        convertedAnimFiles.Select(x => x.directory).ToList(),
-                        convertedAnimFiles.Select(x => x.file).ToList());
+
+                    var filesToAdd = convertedAnimFiles.Select(x => new NewPackFileEntry(x.directory, x.file)).ToList();
+
+                    _pfs.AddFilesToPack(_pfs.GetEditablePack(), filesToAdd);
 
                     _logger.Here().Information($"Saving inv matix files");
-                    var invMatrixFileList = _pfs.FindAllWithExtention(".bone_inv_trans_mats", packfile.Container);
+                    var invMatrixFileList = PackFileServiceUtility.FindAllWithExtention(_pfs, ".bone_inv_trans_mats", packfile.Container);
                     foreach (var invMatrixFile in invMatrixFileList)
                         _pfs.CopyFileFromOtherPackFile(packfile.Container, _pfs.GetFullPath(invMatrixFile), _pfs.GetEditablePack());
                 }
@@ -90,7 +92,7 @@ namespace CommonControls.Editors.AnimationBatchExporter
                 try
                 {
                     var animationFile = AnimationFile.Create(file);
-                    var skeleton = _skeletonAnimationLookUpHelper.GetSkeletonFileFromName(_pfs, animationFile.Header.SkeletonName);
+                    var skeleton = _skeletonAnimationLookUpHelper.GetSkeletonFileFromName(animationFile.Header.SkeletonName);
                     animationFile.ConvertToVersion(outputAnimationFormat, skeleton, _pfs);
 
                     var bytes = AnimationFile.ConvertToBytes(animationFile);

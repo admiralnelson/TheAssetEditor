@@ -27,6 +27,8 @@ namespace Shared.Core.ErrorHandling
 
         static bool IsConfigured = false;
         public static string LogName { get; private set; }
+
+        public static CustomLoggingSink? CustomSink;
         public static void Configure(LogEventLevel logEventLevel)
         {
             if (IsConfigured)
@@ -37,8 +39,9 @@ namespace Shared.Core.ErrorHandling
             var fileName = logDirectory + "\\" + logDate + ".log";
             fileName = getNextFileName(fileName);
             LogName = fileName;
-
+         
             var outputTemplate = "[{Timestamp:HH:mm:ss} {Level}] [{ThreadId}] {SourceContext}::{MemberName} : {Message} {Exception}{NewLine}";
+            CustomSink = new CustomLoggingSink(logEventLevel, outputTemplate);
 
             Log.Logger = new LoggerConfiguration()
                         .MinimumLevel.Debug()
@@ -46,6 +49,7 @@ namespace Shared.Core.ErrorHandling
                         .Enrich.WithThreadId()
                         .WriteTo.File(LogName, logEventLevel, outputTemplate)
                         .WriteTo.Console(logEventLevel, outputTemplate, theme: AnsiConsoleTheme.Literate)
+                        .WriteTo.Sink(CustomSink)
                         .CreateLogger();
 
             IsConfigured = true;

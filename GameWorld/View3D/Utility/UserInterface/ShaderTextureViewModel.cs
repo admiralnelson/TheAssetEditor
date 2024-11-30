@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
-using CommonControls.PackFileBrowser;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GameWorld.Core.Rendering.Materials.Capabilities.Utility;
@@ -18,20 +17,21 @@ namespace GameWorld.Core.Utility.UserInterface
     public partial class ShaderTextureViewModel : ObservableObject, INotifyDataErrorInfo
     {
         private readonly TextureInput _shaderTextureReference;
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         private readonly IUiCommandFactory _uiCommandFactory;
         private readonly ResourceLibrary _resourceLibrary;
+        private readonly IPackFileUiProvider _packFileUiProvider;
 
         [ObservableProperty] string _path;
         [ObservableProperty] bool _shouldRenderTexture;
 
-        public ShaderTextureViewModel(TextureInput shaderTextureReference, PackFileService packFileService, IUiCommandFactory uiCommandFactory, ResourceLibrary resourceLibrary) 
+        public ShaderTextureViewModel(TextureInput shaderTextureReference, IPackFileService packFileService, IUiCommandFactory uiCommandFactory, ResourceLibrary resourceLibrary, IPackFileUiProvider packFileUiProvider) 
         {
             _shaderTextureReference = shaderTextureReference;
             _packFileService = packFileService;
             _uiCommandFactory = uiCommandFactory;
             _resourceLibrary = resourceLibrary;
-
+            _packFileUiProvider = packFileUiProvider;
             Path = _shaderTextureReference.TexturePath;
             _shouldRenderTexture = _shaderTextureReference.UseTexture;
         }
@@ -51,19 +51,18 @@ namespace GameWorld.Core.Utility.UserInterface
         void HandlePreviewTexture()
         {
             if (HasErrors == false)
-                _uiCommandFactory.Create<OpenFileInWindowedEditorCommand>().Execute(Path, 800, 900);
+                _uiCommandFactory.Create<OpenEditorCommand>().ExecuteAsWindow(Path, 800, 900);
         }
 
         [RelayCommand]
         void HandleBrowseTexture()
         {
-            using var browser = new PackFileBrowserWindow(_packFileService);
-            browser.ViewModel.Filter.SetExtentions([".dds", ".png",]);
-            if (browser.ShowDialog() == true && browser.SelectedFile != null)
+            var result = _packFileUiProvider.DisplayBrowseDialog([".dds", ".png"]);
+            if (result.Result == true && result.File != null)
             {
                 try
                 {
-                    var path = _packFileService.GetFullPath(browser.SelectedFile);
+                    var path = _packFileService.GetFullPath(result.File);
                     _resourceLibrary.LoadTexture(path);
 
                     Path = path;
@@ -71,7 +70,7 @@ namespace GameWorld.Core.Utility.UserInterface
                 }
                 catch
                 {
-                    MessageBox.Show($"Failed to load texture {browser.SelectedFile}");
+                    MessageBox.Show($"Failed to load texture {result.File}");
                     ShouldRenderTexture = false;
                 }
             }

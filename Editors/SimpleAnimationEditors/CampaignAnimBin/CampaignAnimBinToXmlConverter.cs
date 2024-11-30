@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using CommonControls.BaseDialogs.ErrorListDialog;
 using Shared.Core.ByteParsing;
 using Shared.Core.ErrorHandling;
+using Shared.Core.ErrorHandling.Exceptions;
 using Shared.Core.PackFiles;
 using Shared.GameFormats.AnimationPack;
 using Shared.Ui.Editors.TextEditor;
@@ -39,7 +40,7 @@ namespace CommonControls.Editors.CampaignAnimBin
             if (list == null || !list.HasData) return;
             ErrorListWindow.ShowDialog("Potential problems", list);
         }
-        private bool ValidateAnimationData(CampaignAnimationBin campaignAnimation, PackFileService pfs, string path)
+        private bool ValidateAnimationData(CampaignAnimationBin campaignAnimation, IPackFileService pfs, string path)
         {
             var IsSkeletonExist = pfs.FindFile($"animations/skeletons/{campaignAnimation.SkeletonName}.anim") != null;
 
@@ -271,7 +272,7 @@ namespace CommonControls.Editors.CampaignAnimBin
 
             return false;
         }
-        public byte[] ToBytes(string text, string filePath, PackFileService pfs, out ITextConverter.SaveError error)
+        public byte[] ToBytes(string text, string filePath, IPackFileService pfs, out ITextConverter.SaveError error)
         {
             try
             {

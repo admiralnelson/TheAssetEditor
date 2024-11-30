@@ -9,6 +9,7 @@ using Shared.Core.Events;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.Core.Services;
+using Shared.TestUtility;
 
 namespace E2EVerification.Shared
 {
@@ -17,9 +18,10 @@ namespace E2EVerification.Shared
         private readonly IServiceProvider _serviceProvider;
 
         public IServiceScope EditorServiceProvider { get; private set; }
-        public PackFileService PackFileService { get; private set; }
+        public IPackFileService PackFileService { get; private set; }
         public IUiCommandFactory CommandFactory { get; private set; }
         public ScopeRepository ScopeRepository { get; private set; }
+
 
         public AssetEditorTestRunner(GameTypeEnum gameEnum = GameTypeEnum.Warhammer3, bool forceValidateServiceScopes = false)
         {
@@ -33,14 +35,19 @@ namespace E2EVerification.Shared
             var resourceLibrary = EditorServiceProvider.ServiceProvider.GetRequiredService<ResourceLibrary>();
             resourceLibrary.Initialize(game.GraphicsDevice, game.Content);
 
-            PackFileService = EditorServiceProvider.ServiceProvider.GetRequiredService<PackFileService>();
+            PackFileService = EditorServiceProvider.ServiceProvider.GetRequiredService<IPackFileService>();
             CommandFactory = EditorServiceProvider.ServiceProvider.GetRequiredService<IUiCommandFactory>();
             ScopeRepository = EditorServiceProvider.ServiceProvider.GetRequiredService<ScopeRepository>();
+            ScopeRepository.Root = EditorServiceProvider;
         }
 
         public PackFileContainer? LoadPackFile(string path, bool createOutputPackFile = true)
         {
-            PackFileService.Load(path, false, true);
+            var loader = EditorServiceProvider.ServiceProvider.GetRequiredService<IPackFileContainerLoader>();
+            var container = loader.Load(path);
+            container.IsCaPackFile = true;
+            PackFileService.AddContainer(container);
+
             if (createOutputPackFile)
                 return PackFileService.CreateNewPackFileContainer("TestOutput", PackFileCAType.MOD, true);
             return null;
@@ -48,7 +55,11 @@ namespace E2EVerification.Shared
 
         public PackFileContainer? LoadFolderPackFile(string path, bool createOutputPackFile = true)
         {
-            PackFileService.LoadFolderContainer(path);
+            var loader = EditorServiceProvider.ServiceProvider.GetRequiredService<IPackFileContainerLoader>();
+            var container = loader.LoadSystemFolderAsPackFileContainer(path);
+            container.IsCaPackFile = true;
+            PackFileService.AddContainer(container);
+
             if (createOutputPackFile)
                 return PackFileService.CreateNewPackFileContainer("TestOutput", PackFileCAType.MOD, true);
             return null;

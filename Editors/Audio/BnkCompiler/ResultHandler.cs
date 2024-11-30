@@ -6,11 +6,13 @@ namespace Editors.Audio.BnkCompiler
 {
     public class ResultHandler
     {
-        private readonly PackFileService _pfs;
+        private readonly IPackFileService _pfs;
+        private readonly IFileSaveService _packFileSaveService;
 
-        public ResultHandler(PackFileService pfs)
+        public ResultHandler(IPackFileService pfs, IFileSaveService packFileSaveService)
         {
             _pfs = pfs;
+            _packFileSaveService = packFileSaveService;
         }
 
         internal Result<bool> ProcessResult(CompileResult compileResult, CompilerData compilerData, CompilerSettings settings)
@@ -27,13 +29,13 @@ namespace Editors.Audio.BnkCompiler
             if (string.IsNullOrWhiteSpace(compilerData.ProjectSettings.Language) == false)
                 bnkOutputPath += $"\\{compilerData.ProjectSettings.Language}";
 
-            SaveHelper.SavePackFile(_pfs, bnkOutputPath, compileResult.OutputBnkFile, true);
+            _packFileSaveService.Save(bnkOutputPath, compileResult.OutputBnkFile.DataSource.ReadData(), true);
 
             if (compileResult.Project.Events.Count > 0)
-                SaveHelper.SavePackFile(_pfs, datOutputPath, compileResult.OutputDatFile, true);
+                _packFileSaveService.Save(datOutputPath, compileResult.OutputDatFile.DataSource.ReadData(), true);
 
             if (compileResult.Project.DialogueEvents.Count > 0)
-                SaveHelper.SavePackFile(_pfs, datOutputPath, compileResult.OutputStatesDatFile, true);
+                _packFileSaveService.Save(datOutputPath, compileResult.OutputStatesDatFile.DataSource.ReadData(), true);
         }
 
         void ExportToDirectory(CompileResult result, CompilerSettings settings)

@@ -1,6 +1,7 @@
 ﻿using Editors.TextureEditor.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Core.DependencyInjection;
+using Shared.Core.DevConfig;
 using Shared.Core.ToolCreation;
 using TextureEditor.Views;
 
@@ -13,12 +14,19 @@ namespace Editors.TextureEditor
             serviceCollection.AddTransient<TexturePreviewView>();
             serviceCollection.AddTransient<TextureEditorViewModel>();
             serviceCollection.AddTransient<TextureBuilder>();  
-            serviceCollection.AddTransient<IEditorViewModel, TextureEditorViewModel>();
+            serviceCollection.AddTransient<IEditorInterface, TextureEditorViewModel>();
+
+            RegisterAllAsInterface<IDeveloperConfiguration>(serviceCollection, ServiceLifetime.Transient);
         }
 
-        public override void RegisterTools(IToolFactory factory)
+        public override void RegisterTools(IEditorDatabase factory)
         {
-            factory.RegisterTool<TextureEditorViewModel, TexturePreviewView>(new ExtensionToTool(EditorEnums.Texture_Editor, [".dds", ".png", ".jpeg"]));
+            EditorInfoBuilder
+                .Create<TextureEditorViewModel, TexturePreviewView>(EditorEnums.Texture_Editor)
+                .AddExtention(".dds", EditorPriorites.Default)
+                .AddExtention(".png", EditorPriorites.Default)
+                .AddExtention(".jpeg", EditorPriorites.Default)
+                .Build(factory);
         }
     }
 }

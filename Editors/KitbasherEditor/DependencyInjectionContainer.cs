@@ -1,6 +1,8 @@
 ﻿using Editors.KitbasherEditor.EventHandlers;
 using Editors.KitbasherEditor.Services;
 using Editors.KitbasherEditor.UiCommands;
+using Editors.KitbasherEditor.ViewModels;
+using Editors.KitbasherEditor.ViewModels.PinTool;
 using Editors.KitbasherEditor.ViewModels.SaveDialog;
 using Editors.KitbasherEditor.ViewModels.SceneExplorer;
 using Editors.KitbasherEditor.ViewModels.SceneExplorer.Nodes;
@@ -10,15 +12,14 @@ using Editors.KitbasherEditor.ViewModels.SceneNodeEditor;
 using KitbasherEditor.ViewModels;
 using KitbasherEditor.ViewModels.MenuBarViews;
 using KitbasherEditor.ViewModels.MeshFitter;
-using KitbasherEditor.ViewModels.PinTool;
 using KitbasherEditor.ViewModels.SaveDialog;
 using KitbasherEditor.ViewModels.SceneExplorerNodeViews;
 using KitbasherEditor.ViewModels.VertexDebugger;
 using KitbasherEditor.Views;
-using KitbasherEditor.Views.EditorViews.PinTool;
 using KitbasherEditor.Views.EditorViews.VertexDebugger;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Core.DependencyInjection;
+using Shared.Core.DevConfig;
 using Shared.Core.ToolCreation;
 using Shared.Ui.Common.MenuSystem;
 
@@ -40,7 +41,7 @@ namespace KitbasherEditor
             // View models 
             serviceCollection.AddScoped<KitbasherView>();
             serviceCollection.AddScoped<KitbasherViewModel>();
-            serviceCollection.AddScoped<IEditorViewModel, KitbasherViewModel>();
+            serviceCollection.AddScoped<IEditorInterface, KitbasherViewModel>();
             serviceCollection.AddScoped<SceneExplorerViewModel>();
             serviceCollection.AddTransient<SceneExplorerContextMenuHandler>();
             serviceCollection.AddScoped<AnimationControllerViewModel>();
@@ -57,8 +58,10 @@ namespace KitbasherEditor
             serviceCollection.AddScoped<VertexDebuggerView>();
             serviceCollection.AddScoped<MeshFitterViewModel>();
             serviceCollection.AddScoped<ReRiggingViewModel>();
-            serviceCollection.AddScoped<PinToolView>();
+
+            // Pin tool
             serviceCollection.AddScoped<PinToolViewModel>();
+            RegisterWindow<PinToolWindow>(serviceCollection);
 
             // Save dialog
             serviceCollection.AddTransient<SaveDialogViewModel>();
@@ -81,11 +84,18 @@ namespace KitbasherEditor
             RegisterAllAsOriginalType<IKitbasherUiCommand>(serviceCollection, ServiceLifetime.Transient);
             serviceCollection.AddTransient<CopyTexturesToPackCommand>();
             serviceCollection.AddTransient<ImportReferenceMeshCommand>();
+
+            RegisterAllAsInterface<IDeveloperConfiguration>(serviceCollection, ServiceLifetime.Transient);
         }
 
-        public override void RegisterTools(IToolFactory factory)
+        public override void RegisterTools(IEditorDatabase factory)
         {
-            factory.RegisterTool<KitbasherViewModel, KitbasherView>(new ExtensionToTool(EditorEnums.Kitbash_Editor, [".rigid_model_v2", ".wsmodel.rigid_model_v2"]/*, new[] { ".wsmodel", ".variantmeshdefinition" }*/));
+            EditorInfoBuilder
+                .Create<KitbasherViewModel, KitbasherView>(EditorEnums.Kitbash_Editor)
+                .AddExtention(".rigid_model_v2", EditorPriorites.High)
+                //.AddExtention(".variantmeshdefinition", 0)
+                .AddExtention(".wsmodel", EditorPriorites.High)
+                .Build(factory);
         }
     }
 }

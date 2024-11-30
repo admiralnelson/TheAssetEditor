@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Xml;
 using System.Xml.Serialization;
-using Shared.Core.ErrorHandling;
+using Shared.Core.ErrorHandling.Exceptions;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.Ui.Editors.TextEditor;
@@ -20,7 +20,7 @@ namespace CommonControls.Editors.AnimationPack.Converters
 
         public PackFile AnimPackToValidate = null;
 
-        protected abstract ITextConverter.SaveError Validate(XmlType type, string s, PackFileService pfs, string filepath);
+        protected abstract ITextConverter.SaveError Validate(XmlType type, string s, IPackFileService pfs, string filepath);
         protected abstract XmlType ConvertBytesToXmlClass(byte[] bytes);
         protected abstract byte[] ConvertToAnimClassBytes(XmlType xmlType, string path);
         protected virtual string CleanUpXml(string xmlText) => xmlText;
@@ -51,7 +51,7 @@ namespace CommonControls.Editors.AnimationPack.Converters
             }
         }
 
-        public byte[] ToBytes(string text, string filePath, PackFileService pfs, out ITextConverter.SaveError error)
+        public byte[] ToBytes(string text, string filePath, IPackFileService pfs, out ITextConverter.SaveError error)
         {
             var xmlserializer = new XmlSerializer(typeof(XmlType));
             using var sr = new StringReader(text);
@@ -79,11 +79,9 @@ namespace CommonControls.Editors.AnimationPack.Converters
                 var inner = ExceptionHelper.GetInnerMostException(e);
                 if (inner is XmlException xmlException)
                     error = new ITextConverter.SaveError() { Text = xmlException.Message, ErrorLineNumber = xmlException.LineNumber, ErrorPosition = xmlException.LinePosition, ErrorLength = 0 };
-                else if (inner != null)
-                    error = new ITextConverter.SaveError() { Text = e.Message + " - " + inner.Message, ErrorLineNumber = 1 };
                 else
-                    error = new ITextConverter.SaveError() { Text = e.Message, ErrorLineNumber = 1 };
-
+                    throw;
+  
                 return null;
             }
         }

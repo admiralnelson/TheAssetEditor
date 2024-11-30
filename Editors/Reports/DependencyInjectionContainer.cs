@@ -1,4 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Editors.Reports.Animation;
+using Editors.Reports.DeepSearch;
+using Editors.Reports.Files;
+using Editors.Reports.Geometry;
+using Microsoft.Extensions.DependencyInjection;
 using Shared.Core.DependencyInjection;
 
 namespace Editors.Reports
@@ -9,9 +13,27 @@ namespace Editors.Reports
         {
         }
 
-        public override void Register(IServiceCollection services)
+        public override void Register(IServiceCollection serviceCollection)
         {
-           
+            serviceCollection.AddTransient<DeepSearchReport>();
+            serviceCollection.AddTransient<DeepSearchCommand>();
+
+
+            serviceCollection.AddTransient<MaterialReportCommand>();
+            serviceCollection.AddTransient<MaterialReportGenerator>();
+
+            serviceCollection.AddTransient<FileListReportCommand>();
+            serviceCollection.AddTransient<FileListReportGenerator>();
+
+            serviceCollection.AddTransient<GenerateMetaJsonDataReportCommand>();
+            serviceCollection.AddTransient<AnimMetaDataJsonGenerator>();
+
+            serviceCollection.AddTransient<GenerateMetaDataReportCommand>();
+            serviceCollection.AddTransient<AnimMetaDataReportGenerator>();
+
+            serviceCollection.AddTransient<Rmv2ReportCommand>();
+            serviceCollection.AddTransient<Rmv2ReportGenerator>();
+            
         }
     }
 }

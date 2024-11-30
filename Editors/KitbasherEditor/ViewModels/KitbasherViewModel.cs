@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using System.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Editors.KitbasherEditor.EventHandlers;
 using Editors.KitbasherEditor.Services;
 using Editors.KitbasherEditor.ViewModels.SceneExplorer;
@@ -11,17 +11,18 @@ using Serilog;
 using Shared.Core.ErrorHandling;
 using Shared.Core.Events;
 using Shared.Core.Events.Scoped;
-using Shared.Core.Misc;
-using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.Core.Services;
 using Shared.Core.ToolCreation;
 using Shared.Ui.BaseDialogs.PackFileBrowser;
 using Shared.Ui.Common;
 
-namespace KitbasherEditor.ViewModels
+namespace Editors.KitbasherEditor.ViewModels
 {
-    public class KitbasherViewModel : NotifyPropertyChangedImpl, IEditorViewModel, ISaveableEditor,
+    public partial class KitbasherViewModel : ObservableObject, 
+        IEditorInterface, 
+        IFileEditor,
+        ISaveableEditor,
         IDropTarget<TreeNode>
     {
         private readonly ILogger _logger = Logging.Create<KitbasherViewModel>();
@@ -36,15 +37,15 @@ namespace KitbasherEditor.ViewModels
         public MenuBarViewModel MenuBar { get; set; }
         public AnimationControllerViewModel Animation { get; set; }
 
-        public NotifyAttr<string> DisplayName { get; set; } = new NotifyAttr<string>("3D Viewer");
+        [ObservableProperty] string _displayName = "Kitbash Tool";
 
-        PackFile _mainFile;
-        public PackFile MainFile { get => _mainFile; set { _mainFile = value; LoadScene(value); }  }
+        PackFile _inputFileReference;
+        public PackFile CurrentFile { get => _inputFileReference; }
 
         private bool _hasUnsavedChanges;
 
         public KitbasherViewModel(
-            EventHub eventHub,
+            IEventHub eventHub,
             IWpfGame gameWorld,
             MenuBarViewModel menuBarViewModel,
             AnimationControllerViewModel animationControllerViewModel,
@@ -74,18 +75,19 @@ namespace KitbasherEditor.ViewModels
             componentInserter.Execute();
         }
 
-        private void LoadScene(PackFile fileToLoad)
+        public void LoadFile(PackFile fileToLoad)
         {
             try
             {
+                _inputFileReference = fileToLoad;
                 _kitbashSceneCreator.CreateFromPackFile(fileToLoad);
                 _focusSelectableObjectComponent.FocusScene();
-                DisplayName.Value = fileToLoad.Name;
+                DisplayName = fileToLoad.Name;
             }
             catch (Exception e)
             {
-                _logger.Here().Error($"Error loading file {fileToLoad?.Name} - {e}");
-                MessageBox.Show($"Unable to load file\n+{e.Message}");
+                _logger.Here().Error($"Unable to load file '{fileToLoad?.Name}' \n {e.Message}");
+                throw new Exception($"Unable to load file '{fileToLoad?.Name}", e);
             }
         }
 
@@ -99,17 +101,17 @@ namespace KitbasherEditor.ViewModels
             set
             {
                 _hasUnsavedChanges = value;
-                NotifyPropertyChanged();
+                OnPropertyChanged(nameof(HasUnsavedChanges));
             }
         }
 
         public bool AllowDrop(TreeNode node, TreeNode targeNode = null) => _dropHandler.AllowDrop(node, targeNode);
-        public bool Drop(TreeNode node, TreeNode targeNode = null) => _dropHandler.Drop(node, targeNode);
+        public bool Drop(TreeNode node, TreeNode targeNode = null) => _dropHandler.Drop(node);
 
         void OnFileSaved(ScopedFileSavedEvent notification)
         {
             HasUnsavedChanges = false;
-            DisplayName.Value = Path.GetFileName(notification.NewPath);
+            DisplayName = Path.GetFileName(notification.NewPath);
         }
 
         void OnCommandStackChanged(CommandStackChangedEvent notification)

@@ -21,11 +21,11 @@ namespace Editors.KitbasherEditor.UiCommands
 
         private readonly SelectionManager _selectionManager;
         private readonly SkeletonAnimationLookUpHelper _skeletonHelper;
-        private readonly PackFileService _pfs;
+        private readonly IPackFileService _pfs;
         private readonly IWindowFactory _windowFactory;
         private readonly SceneManager _sceneManager;
 
-        public OpenSkeletonReshaperToolCommand(SelectionManager selectionManager, SkeletonAnimationLookUpHelper skeletonHelper, PackFileService pfs, IWindowFactory windowFactory, SceneManager sceneManager)
+        public OpenSkeletonReshaperToolCommand(SelectionManager selectionManager, SkeletonAnimationLookUpHelper skeletonHelper, IPackFileService pfs, IWindowFactory windowFactory, SceneManager sceneManager)
         {
             _selectionManager = selectionManager;
             _skeletonHelper = skeletonHelper;
@@ -60,7 +60,7 @@ namespace Editors.KitbasherEditor.UiCommands
             }
 
             var currentSkeletonName = allSkeltonNames.First();
-            var currentSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(_pfs, currentSkeletonName);
+            var currentSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(currentSkeletonName);
 
             var usedBoneIndexes = meshNodes
                 .SelectMany(x => x.Geometry.GetUniqeBlendIndices())
@@ -70,7 +70,7 @@ namespace Editors.KitbasherEditor.UiCommands
 
             var rootNode = _sceneManager.GetNodeByName<MainEditableNode>(SpecialNodes.EditableModel);
             var targetSkeleton = rootNode.SkeletonNode;
-            var targetSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(_pfs, targetSkeleton.Name);
+            var targetSkeletonFile = _skeletonHelper.GetSkeletonFileFromName(targetSkeleton.Name);
 
             var config = new RemappedAnimatedBoneConfiguration();
             config.ParnetModelSkeletonName = targetSkeleton.Name;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using Editors.Audio.BnkCompiler.ObjectConfiguration.Warhammer3;
@@ -10,18 +9,19 @@ using Shared.Core.ErrorHandling;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using static Editors.Audio.BnkCompiler.ProjectLoaderHelpers;
+using static Shared.Core.PackFiles.IPackFileService;
 
 namespace Editors.Audio.BnkCompiler
 {
     public class ProjectLoader
     {
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         public static readonly Dictionary<uint, uint> EventMixers = new Dictionary<uint, uint>();
         public static readonly Dictionary<uint, uint> DialogueEventMixers = new Dictionary<uint, uint>();
         public static readonly IVanillaObjectIds VanillaObjectIds = new WwiseIdProvider();
         private readonly IAudioRepository _audioRepository;
 
-        public ProjectLoader(PackFileService packFileService, IAudioRepository audioRepository)
+        public ProjectLoader(IPackFileService packFileService, IAudioRepository audioRepository)
         {
             _packFileService = packFileService;
             _audioRepository = audioRepository;
@@ -90,8 +90,8 @@ namespace Editors.Audio.BnkCompiler
             {
                 // Get file path and directory
                 var filePath = _packFileService.GetFullPath(packfile);
-                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
-                var directory = Path.GetDirectoryName(filePath);
+                var fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
+                var directory = System.IO.Path.GetDirectoryName(filePath);
 
                 // Serialize compiler data
                 var options = new JsonSerializerOptions
@@ -102,7 +102,8 @@ namespace Editors.Audio.BnkCompiler
                 var outputName = $"{fileNameWithoutExtension}_generated.json";
 
                 // Add file to pack
-                _packFileService.AddFileToPack(_packFileService.GetEditablePack(), directory, PackFile.CreateFromASCII(outputName, compilerDataAsStr));
+                var fileEntry = new NewPackFileEntry(directory, PackFile.CreateFromASCII(outputName, compilerDataAsStr));
+                _packFileService.AddFilesToPack(_packFileService.GetEditablePack(), [fileEntry]);
             }
         }
 

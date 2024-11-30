@@ -117,24 +117,24 @@ namespace AnimationEditor.MountAnimationCreator.Services
             return _riderSkeleton;
         }
 
-        static public PackFile SaveAnimation(PackFileService pfs, string riderAnimationName, string savePrefix, bool ensureUniqeName, AnimationClip clip, GameSkeleton skeleton)
-        {
-            var animFile = clip.ConvertToFileFormat(skeleton);
-            var bytes = AnimationFile.ConvertToBytes(animFile);
+        //static public PackFile SaveAnimation(PackFileService pfs, string riderAnimationName, string savePrefix, bool ensureUniqeName, AnimationClip clip, GameSkeleton skeleton)
+        //{
+        //    var animFile = clip.ConvertToFileFormat(skeleton);
+        //    var bytes = AnimationFile.ConvertToBytes(animFile);
+        //
+        //    string savePath = "";
+        //    if (string.IsNullOrWhiteSpace(savePrefix) == false)
+        //    {
+        //        if (ensureUniqeName)
+        //            savePath = GenerateNewAnimationName(pfs, riderAnimationName, savePrefix);
+        //        else
+        //            savePath = Path.GetDirectoryName(riderAnimationName) + "\\" + savePrefix + Path.GetFileName(riderAnimationName);
+        //    }
+        //
+        //    return SaveHelper.Save(pfs, savePath, null, bytes);
+        //}
 
-            string savePath = "";
-            if (string.IsNullOrWhiteSpace(savePrefix) == false)
-            {
-                if (ensureUniqeName)
-                    savePath = GenerateNewAnimationName(pfs, riderAnimationName, savePrefix);
-                else
-                    savePath = Path.GetDirectoryName(riderAnimationName) + "\\" + savePrefix + Path.GetFileName(riderAnimationName);
-            }
-
-            return SaveHelper.Save(pfs, savePath, null, bytes);
-        }
-
-        static string GenerateNewAnimationName(PackFileService pfs, string fullPath, string prefix, int numberId = 0)
+        static string GenerateNewAnimationName(IPackFileService pfs, string fullPath, string prefix, int numberId = 0)
         {
             string numberPostFix = "";
             if (numberId != 0)

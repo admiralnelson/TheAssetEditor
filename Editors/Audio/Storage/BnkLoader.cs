@@ -26,11 +26,11 @@ namespace Editors.Audio.Storage
             public Dictionary<uint, List<DidxAudio>> DidxAudioList { get; internal set; } = new();
         }
 
-        private readonly PackFileService _pfs;
+        private readonly IPackFileService _pfs;
         private readonly BnkParser _bnkParser;
         readonly ILogger _logger = Logging.Create<BnkLoader>();
 
-        public BnkLoader(PackFileService pfs, BnkParser bnkParser)
+        public BnkLoader(IPackFileService pfs, BnkParser bnkParser)
         {
             _pfs = pfs;
             _bnkParser = bnkParser;
@@ -46,7 +46,7 @@ namespace Editors.Audio.Storage
 
         public LoadResult LoadBnkFiles(bool onlyEnglish = true)
         {
-            var bankFiles = _pfs.FindAllWithExtentionIncludePaths(".bnk");
+            var bankFiles = PackFileServiceUtility.FindAllWithExtentionIncludePaths(_pfs, ".bnk");
             var bankFilesAsDictionary = bankFiles.GroupBy(f => f.FileName).ToDictionary(g => g.Key, g => g.Last().Pack);
             var removeFilter = new List<string>() { "media", "init.bnk", "animation_blood_data.bnk" };
             if (onlyEnglish)

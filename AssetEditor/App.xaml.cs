@@ -6,9 +6,11 @@ using AssetEditor.Services;
 using AssetEditor.ViewModels;
 using AssetEditor.Views;
 using AssetEditor.Views.Settings;
-using Editors.Shared.DevConfig.Base;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Core.DependencyInjection;
+using Shared.Core.DevConfig;
 using Shared.Core.ErrorHandling;
+using Shared.Core.ErrorHandling.Exceptions;
 using Shared.Core.PackFiles;
 using Shared.Core.Services;
 using Shared.Core.Settings;
@@ -22,12 +24,19 @@ namespace AssetEditor
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            ApplicationStateRecorder.Initialize();
+
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
             VersionChecker.CheckVersion();
             Current.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler(DispatcherUnhandledExceptionHandler);
 
             var forceValidateServiceScopes = Debugger.IsAttached;
             _serviceProvider = new DependencyInjectionConfig().Build(forceValidateServiceScopes);
             _rootScope = _serviceProvider.CreateScope();
+
+            _ = _rootScope.ServiceProvider.GetRequiredService<RecentFilesTracker>(); // Force instance
+            var scopeRepo = _rootScope.ServiceProvider.GetRequiredService<ScopeRepository>();
+            scopeRepo.Root = _rootScope;
 
             var settingsService = _rootScope.ServiceProvider.GetRequiredService<ApplicationSettingsService>();
             settingsService.AllowSettingsUpdate = true;
@@ -58,12 +67,14 @@ namespace AssetEditor
                 var gamePath = settingsService.GetGamePathForCurrentGame();
                 if (gamePath != null)
                 {
-                    var gameInformationFactory = _rootScope.ServiceProvider.GetRequiredService<GameInformationFactory>();
-                    var packfileService = _rootScope.ServiceProvider.GetRequiredService<PackFileService>();
-                    var gameName = gameInformationFactory.GetGameById(settingsService.CurrentSettings.CurrentGame).DisplayName;
-                    var loadRes = packfileService.LoadAllCaFiles(gamePath, gameName);
-                    if (!loadRes)
+                    var packfileService = _rootScope.ServiceProvider.GetRequiredService<IPackFileService>();
+                    var containerLoader = _rootScope.ServiceProvider.GetRequiredService<IPackFileContainerLoader>();
+                    var loadRes = containerLoader.LoadAllCaFiles(settingsService.CurrentSettings.CurrentGame);
+
+                    if (loadRes == null)
                         MessageBox.Show($"Unable to load all CA packfiles in {gamePath}");
+                    else
+                        packfileService.AddContainer(loadRes);
                 }
             }
 
@@ -75,21 +86,27 @@ namespace AssetEditor
 
         void ShowMainWindow()
         {
+            var applicationSettingsService = _rootScope.ServiceProvider.GetRequiredService<ApplicationSettingsService>();
+            ThemesController.SetTheme(applicationSettingsService.CurrentSettings.Theme);
+
             var mainWindow = _rootScope.ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.DataContext = _rootScope.ServiceProvider.GetRequiredService<MainViewModel>();
             mainWindow.Show();
 
-            var applicationSettingsService = _rootScope.ServiceProvider.GetRequiredService<ApplicationSettingsService>();
             if (applicationSettingsService.CurrentSettings.StartMaximised == true)
                 mainWindow.WindowState = WindowState.Maximized;
-
-            ThemesController.SetTheme(applicationSettingsService.CurrentSettings.Theme);
         }
 
         void DispatcherUnhandledExceptionHandler(object sender, DispatcherUnhandledExceptionEventArgs args)
         {
             Logging.Create<App>().Here().Fatal(args.Exception.ToString());
-            MessageBox.Show(args.Exception.ToString(), "Error");
+
+            var exceptionService = _rootScope?.ServiceProvider.GetService<IExceptionService>();
+            if (exceptionService != null)
+               exceptionService.CreateDialog(args.Exception);   
+            else
+                MessageBox.Show(args.Exception.ToString(), "Error");
+
             args.Handled = true;
         }
     }

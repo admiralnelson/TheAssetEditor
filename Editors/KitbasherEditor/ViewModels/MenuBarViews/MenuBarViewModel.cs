@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Editors.KitbasherEditor.UiCommands;
 using GameWorld.Core.Components.Selection;
@@ -26,7 +23,7 @@ namespace KitbasherEditor.ViewModels.MenuBarViews
         private readonly WindowKeyboard _keyboard;
         private readonly Dictionary<Type, MenuAction> _uiCommands = new();
 
-        public MenuBarViewModel(CommandExecutor commandExecutor, EventHub eventHub, MenuItemVisibilityRuleEngine menuItemVisibilityRuleEngine, TransformToolViewModel transformToolViewModel,IUiCommandFactory uiCommandFactory, WindowKeyboard windowKeyboard)
+        public MenuBarViewModel(CommandExecutor commandExecutor, IEventHub eventHub, MenuItemVisibilityRuleEngine menuItemVisibilityRuleEngine, TransformToolViewModel transformToolViewModel,IUiCommandFactory uiCommandFactory, WindowKeyboard windowKeyboard)
         {
             _commandExecutor = commandExecutor;
             _menuItemVisibilityRuleEngine = menuItemVisibilityRuleEngine;
@@ -74,8 +71,7 @@ namespace KitbasherEditor.ViewModels.MenuBarViews
             RegisterUiCommand<ToggleViewSelectedCommand>();
             RegisterUiCommand<ResetCameraCommand>();
             RegisterUiCommand<FocusCameraCommand>();
-            RegisterUiCommand<ToggleBackFaceRenderingCommand>();
-            RegisterUiCommand<ToggleLargeSceneRenderingCommand>();
+            RegisterUiCommand<OpenRenderSettingsWindowCommand>();
 
             RegisterUiCommand<DivideSubMeshCommand>();
             RegisterUiCommand<MergeObjectsCommand>();
@@ -120,9 +116,8 @@ namespace KitbasherEditor.ViewModels.MenuBarViews
             var renderingToolbar = builder.CreateRootToolBar("Rendering");
             builder.CreateToolBarItem<FocusCameraCommand>(renderingToolbar, "Focus camera");
             builder.CreateToolBarItem<ResetCameraCommand>(renderingToolbar, "Reset camera");
-            builder.CreateToolBarSeparator(renderingToolbar);
-            builder.CreateToolBarItem<ToggleBackFaceRenderingCommand>(renderingToolbar, "Toggle backface rendering");
-            builder.CreateToolBarItem<ToggleLargeSceneRenderingCommand>(renderingToolbar, "Toggle Big scene rendering");
+            builder.CreateToolBarItem<OpenRenderSettingsWindowCommand>(renderingToolbar, "Open render settings");
+
 
             return builder.Build();
         }

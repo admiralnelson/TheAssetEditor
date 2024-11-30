@@ -1,9 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
-using System.Collections.Generic;
-using System.Windows;
+﻿using System.Windows;
 using CommonControls.BaseDialogs;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
@@ -15,43 +10,43 @@ namespace CommonControls.Editors.AnimationPack
 {
     public class AnimationPackSampleDataCreator
     {
-        public static PackFile CreateAnimationDbWarhammer3(PackFileService pfs)
+        public static PackFile? CreateAnimationDbWarhammer3(IFileSaveService saveHelper, IPackFileService pfs)
         {
             TextInputWindow window = new TextInputWindow("New AnimPack name", "");
             if (window.ShowDialog() == true)
-                return CreateAnimationDbWarhammer3(pfs, window.TextValue);
+                return CreateAnimationDbWarhammer3(saveHelper, pfs, window.TextValue);
             return null;
         }
 
         public static string GenerateWh3AnimPackName(string name)
         {
-            var fileName = SaveHelper.EnsureEnding(name, ".animpack");
+            var fileName = SaveUtility.EnsureEnding(name, ".animpack");
             var filePath = @"animations/database/battle/bin/" + fileName;
             return filePath;
         }
 
-        public static PackFile CreateAnimationDbWarhammer3(PackFileService pfs, string name)
+        public static PackFile? CreateAnimationDbWarhammer3(IFileSaveService saveHelper, IPackFileService pfs, string name)
         {
             var filePath = GenerateWh3AnimPackName(name);
 
-            if (!SaveHelper.IsFilenameUnique(pfs, filePath))
+            if (!SaveUtility.IsFilenameUnique(pfs, filePath))
             {
                 MessageBox.Show("Filename is not unique");
                 return null;
             }
 
             var animPack = new AnimationPackFile("Placeholder");
-            return SaveHelper.Save(pfs, filePath, null, AnimationPackSerializer.ConvertToBytes(animPack));
+            return saveHelper.Save(filePath, AnimationPackSerializer.ConvertToBytes(animPack), false);
         }
 
-        public static void CreateAnimationDb3k(PackFileService pfs)
+        public static void CreateAnimationDb3k(IPackFileService pfs, IFileSaveService saveHelper)
         {
             TextInputWindow window = new TextInputWindow("New AnimPack name", "");
             if (window.ShowDialog() == true)
             {
-                var fileName = SaveHelper.EnsureEnding(window.TextValue, ".animpack");
+                var fileName = SaveUtility.EnsureEnding(window.TextValue, ".animpack");
                 var filePath = @"animations/database/battle/bin/" + fileName;
-                if (!SaveHelper.IsFilenameUnique(pfs, filePath))
+                if (!SaveUtility.IsFilenameUnique(pfs, filePath))
                 {
                     MessageBox.Show("Filename is not unique");
                     return;
@@ -59,14 +54,14 @@ namespace CommonControls.Editors.AnimationPack
 
                 // Create dummy data
                 var animPack = new AnimationPackFile("Placeholder");
-                SaveHelper.Save(pfs, filePath, null, AnimationPackSerializer.ConvertToBytes(animPack));
+                saveHelper.Save(filePath, AnimationPackSerializer.ConvertToBytes(animPack), false);
             }
         }
 
 
         public static IAnimationPackFile CreateExampleWarhammer3AnimSet(string binName)
         {
-            var filename = SaveHelper.EnsureEnding(binName, ".bin");
+            var filename = SaveUtility.EnsureEnding(binName, ".bin");
             var filePath = @"animations/database/battle/bin/" + filename;
             var outputFile = new AnimationBinWh3(filePath)
             {

@@ -4,7 +4,7 @@ namespace Shared.Core.PackFiles
 {
     public static class PackFileUtil
     {
-        public static List<PackFile> FilterUnvantedFiles(PackFileService pfs, List<PackFile> files, string[] removeFilters, out PackFile[] removedFiles)
+        public static List<PackFile> FilterUnvantedFiles(IPackFileService pfs, List<PackFile> files, string[] removeFilters, out PackFile[] removedFiles)
         {
             var tempRemoveFiles = new List<PackFile>();
             var fileList = files.ToList();
@@ -55,11 +55,9 @@ namespace Shared.Core.PackFiles
             return fileList;
         }
 
-        public static List<PackFile> LoadFilesFromDisk(PackFileService pfs, IEnumerable<FileRef> fileRefs)
+        public static List<PackFile> LoadFilesFromDisk(IPackFileService pfs, IEnumerable<FileRef> fileRefs)
         {
-            var packFileList = new List<PackFile>();
-            var pathList = new List<string>();
-
+            var packFileList = new List<NewPackFileEntry>();
             foreach (var fileRef in fileRefs)
             {
                 var fileSource = new FileSystemSource(fileRef.SystemPath);
@@ -68,15 +66,14 @@ namespace Shared.Core.PackFiles
                     packfileName = Path.GetFileName(fileRef.SystemPath);
                 var packfile = new PackFile(packfileName, fileSource);
 
-                packFileList.Add(packfile);
-                pathList.Add(fileRef.PackFilePath);
+                packFileList.Add( new NewPackFileEntry(fileRef.PackFilePath, packfile));
             }
 
-            pfs.AddFilesToPack(pfs.GetEditablePack(), pathList, packFileList);
-            return packFileList;
+            pfs.AddFilesToPack(pfs.GetEditablePack(), packFileList);
+            return packFileList.Select(x=>x.PackFile).ToList();
         }
 
-        public static List<PackFile> LoadFilesFromDisk(PackFileService pfs, FileRef fileRef) => LoadFilesFromDisk(pfs, new FileRef[] { fileRef });
+        public static List<PackFile> LoadFilesFromDisk(IPackFileService pfs, FileRef fileRef) => LoadFilesFromDisk(pfs, new FileRef[] { fileRef });
 
         public class FileRef
         {

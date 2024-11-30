@@ -5,7 +5,6 @@ using Editors.KitbasherEditor.UiCommands;
 using Editors.Shared.Core.Services;
 using GameWorld.Core.Components.Rendering;
 using GameWorld.Core.SceneNodes;
-using KitbasherEditor.ViewModels;
 using KitbasherEditor.Views.EditorViews;
 using Shared.Core.Events;
 using Shared.Ui.Common.DataTemplates;
@@ -38,7 +37,7 @@ namespace Editors.KitbasherEditor.ViewModels.SceneExplorer.Nodes
             _renderEngineComponent = renderEngineComponent;
             _uiCommandFactory = uiCommandFactory;
             
-            SkeletonNameList = _skeletonAnimationLookUpHelper.SkeletonFileNames;
+            SkeletonNameList = _skeletonAnimationLookUpHelper.GetAllSkeletonFileNames();
         }
 
 

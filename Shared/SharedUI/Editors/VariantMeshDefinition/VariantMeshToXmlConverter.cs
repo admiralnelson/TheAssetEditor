@@ -5,6 +5,7 @@ using System.Windows;
 using System.Xml;
 using System.Xml.Serialization;
 using Shared.Core.ErrorHandling;
+using Shared.Core.ErrorHandling.Exceptions;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.Ui.Editors.TextEditor;
@@ -27,7 +28,7 @@ namespace Shared.Ui.Editors.VariantMeshDefinition
             }
         }
 
-        public byte[] ToBytes(string text, string filePath, PackFileService pfs, out ITextConverter.SaveError error)
+        public byte[] ToBytes(string text, string filePath, IPackFileService pfs, out ITextConverter.SaveError error)
         {
             try
             {
@@ -49,7 +50,7 @@ namespace Shared.Ui.Editors.VariantMeshDefinition
             }
         }
 
-        ITextConverter.SaveError ValidateFilePaths(VariantMesh mesh, PackFileService pfs)
+        ITextConverter.SaveError ValidateFilePaths(VariantMesh mesh, IPackFileService pfs)
         {
             if (string.IsNullOrWhiteSpace(mesh.ModelReference) == false)
             {

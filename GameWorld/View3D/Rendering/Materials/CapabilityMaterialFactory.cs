@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using GameWorld.Core.Rendering.Materials.Shaders;
 using GameWorld.Core.Services;
 using Shared.Core.Services;
-using Shared.GameFormats.RigidModel;
 using Shared.GameFormats.RigidModel.MaterialHeaders;
 using Shared.GameFormats.WsModel;
 
@@ -31,11 +29,17 @@ namespace GameWorld.Core.Rendering.Materials
             else
                 UpdatedPreferedMaterialBasedOnRmv(currentGame, rmvMaterial, ref preferredMaterial);
 
-            var material = CreateMaterial(preferredMaterial);
-            foreach (var capability in material.Capabilities)
-                capability.Initialize(wsModelMaterial, rmvMaterial);
-
-            return material;
+            try
+            {
+                var material = CreateMaterial(preferredMaterial);
+                foreach (var capability in material.Capabilities)
+                    capability.Initialize(wsModelMaterial, rmvMaterial);
+                return material;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to initialize material '{preferredMaterial}' for game {currentGame}. RmrMaterial={rmvMaterial.MaterialId} wsModelMaterial={wsModelMaterial?.Name} ", ex);
+            }
         }
 
         void UpdatedPreferedMaterialBasedOnWsMaterial(GameTypeEnum currentGame, WsModelMaterialFile wsModelMaterial, ref CapabilityMaterialsEnum preferredMaterial)
@@ -43,7 +47,9 @@ namespace GameWorld.Core.Rendering.Materials
             if ((currentGame == GameTypeEnum.Warhammer3 || currentGame == GameTypeEnum.ThreeKingdoms) == false)
                 return;
 
-            if (wsModelMaterial.ShaderPath.Contains("emissive", StringComparison.InvariantCultureIgnoreCase))
+            var isEmissive = wsModelMaterial.ShaderPath.Contains("emissive", StringComparison.InvariantCultureIgnoreCase);
+            var isPropEmissive = wsModelMaterial.ShaderPath.Contains("prop_emissive", StringComparison.InvariantCultureIgnoreCase);
+            if (isEmissive && !isPropEmissive)
                 preferredMaterial = CapabilityMaterialsEnum.MetalRoughPbr_Emissive;
         }
 

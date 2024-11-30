@@ -30,13 +30,13 @@ namespace Editors.AnimationMeta.Visualisation
         private readonly ComplexMeshLoader _complexMeshLoader;
         private readonly ResourceLibrary _resourceLibrary;
         private readonly SkeletonAnimationLookUpHelper _skeletonAnimationLookUpHelper;
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         private readonly AnimationsContainerComponent _animationsContainerComponent;
 
         public MetaDataFactory(ComplexMeshLoader complexMeshLoader,
             ResourceLibrary resourceLibrary,
             SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper,
-            PackFileService packFileService,
+            IPackFileService packFileService,
             AnimationsContainerComponent animationsContainerComponent)
         {
             _complexMeshLoader = complexMeshLoader;
@@ -137,13 +137,13 @@ namespace Editors.AnimationMeta.Visualisation
             var propPlayer = _animationsContainerComponent.RegisterAnimationPlayer(new AnimationPlayer(), propName + Guid.NewGuid());
 
             // Configure the mesh
-            var loadedNode = _complexMeshLoader.Load(meshPath, new GroupNode(propName), propPlayer);
+            var loadedNode = _complexMeshLoader.Load(meshPath, new GroupNode(propName), propPlayer, false); // TODO: Could last arg be true? WOuld be better
 
             // Configure animation
             if (animationPath != null)
             {
                 var skeletonName = SceneNodeHelper.GetSkeletonName(loadedNode);
-                var skeletonFile = _skeletonAnimationLookUpHelper.GetSkeletonFileFromName(_packFileService, skeletonName);
+                var skeletonFile = _skeletonAnimationLookUpHelper.GetSkeletonFileFromName(skeletonName);
                 var skeleton = new GameSkeleton(skeletonFile, propPlayer);
                 var animFile = AnimationFile.Create(animationPath);
                 var clip = new AnimationClip(animFile, skeleton);

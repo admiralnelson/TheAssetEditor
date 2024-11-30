@@ -4,10 +4,10 @@ using System.Windows;
 using Shared.Core.PackFiles;
 using Shared.Core.PackFiles.Models;
 using Shared.Ui.BaseDialogs.PackFileBrowser;
+using Shared.Ui.BaseDialogs.PackFileBrowser.ContextMenu;
 
 namespace CommonControls.PackFileBrowser
 {
-
     public partial class SavePackFileWindow : Window, IDisposable, INotifyPropertyChanged
     {
         public PackFile SelectedFile { get; set; }
@@ -19,15 +19,14 @@ namespace CommonControls.PackFileBrowser
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string CurrentFileName { get => _currentFileName; set { _currentFileName = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("CurrentFileName")); SelectedFile = null; } }
-        PackFileService _packfileService;
+        IPackFileService _packfileService;
 
 
         public string FilePath { get; private set; }
-        public SavePackFileWindow(PackFileService packfileService)
+        public SavePackFileWindow(IPackFileService packfileService, PackFileTreeViewBuilder packFileBrowserBuilder)
         {
             _packfileService = packfileService;
-            ViewModel = new PackFileBrowserViewModel(packfileService, true);
-            ViewModel.ContextMenu = new OpenFileContextMenuHandler(packfileService);
+            ViewModel = packFileBrowserBuilder.Create(ContextMenuType.Simple, false);
             ViewModel.FileOpen += ViewModel_FileOpen;
             ViewModel.NodeSelected += ViewModel_FileSelected;
             InitializeComponent();
@@ -78,7 +77,7 @@ namespace CommonControls.PackFileBrowser
                     path = "";
                 }
                 else
-                if (_selectedNode.NodeType == NodeType.File)
+                if (_selectedNode.GetNodeType() == NodeType.File)
                 {
                     var fullPath = _selectedNode.GetFullPath();
                     path = System.IO.Path.GetDirectoryName(fullPath) + "\\";

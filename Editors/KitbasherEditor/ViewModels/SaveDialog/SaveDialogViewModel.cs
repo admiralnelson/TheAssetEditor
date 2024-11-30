@@ -15,8 +15,9 @@ namespace KitbasherEditor.ViewModels.SaveDialog
     public partial class SaveDialogViewModel : ObservableObject 
     {
         private readonly SceneManager _sceneManager;
-        private readonly SaveService _saveService;
-        private readonly PackFileService _pfs;
+        private readonly GameWorld.Core.Services.SceneSaving.SaveService _saveService;
+        private readonly IPackFileService _pfs;
+        private readonly IPackFileUiProvider _packFileUiProvider;
         private GeometrySaveSettings? _saveSettings;
 
         [ObservableProperty] ObservableCollection<LodGroupNodeViewModel> _lodNodes = [];
@@ -32,12 +33,12 @@ namespace KitbasherEditor.ViewModels.SaveDialog
         [ObservableProperty] bool _onlySaveVisible = false;
         [ObservableProperty] int _numberOfLodsToGenerate;
 
-        public SaveDialogViewModel(SceneManager sceneManager, SaveService saveService, PackFileService pfs)
+        public SaveDialogViewModel(SceneManager sceneManager, GameWorld.Core.Services.SceneSaving.SaveService saveService, IPackFileService pfs, IPackFileUiProvider packFileUiProvider)
         {
             _sceneManager = sceneManager;
             _saveService = saveService;
             _pfs = pfs;
-
+            _packFileUiProvider = packFileUiProvider;
             MeshStrategies = _saveService.GetGeometryStrategies().Select(x => new ComboBoxItem<GeometryStrategy>(x.StrategyId, x.Name, x.Description)).ToList();
             WsStrategies = _saveService.GetMaterialStrategies().Select(x => new ComboBoxItem<MaterialStrategy>(x.StrategyId, x.Name, x.Description)).ToList();
             LodStrategies = _saveService.GetLodStrategies().Select(x => new ComboBoxItem<LodStrategy>(x.StrategyId, x.Name, x.Description)).ToList();
@@ -102,11 +103,11 @@ namespace KitbasherEditor.ViewModels.SaveDialog
         void HandleBrowseLocation()
         {
             var extension = ".rigid_model_v2";
-            var dialogResult = _pfs.UiProvider.DisplaySaveDialog(_pfs, [extension], out _, out var filePath);
+            var dialogResult = _packFileUiProvider.DisplaySaveDialog(_pfs, [extension]);
 
-            if (dialogResult == true)
+            if (dialogResult.Result == true)
             {
-                var path = filePath!;
+                var path = dialogResult.SelectedFilePath!;
                 if (path.Contains(extension) == false)
                     path += extension;
 

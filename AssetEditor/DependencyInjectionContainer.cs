@@ -1,14 +1,12 @@
-﻿using AnimationEditor.Common.BaseControl;
-using AssetEditor.Services;
+﻿using AssetEditor.Services;
 using AssetEditor.UiCommands;
 using AssetEditor.ViewModels;
 using AssetEditor.Views;
 using AssetEditor.Views.Settings;
-using Editors.Shared.Core.Common.AnimationPlayer;
-using Editors.Shared.Core.Common;
-using Editors.Shared.DevConfig.Base;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Core.DependencyInjection;
+using Shared.Core.DevConfig;
+using Shared.Core.ErrorHandling.Exceptions;
 using Shared.Core.ToolCreation;
 using Shared.Ui.Events.UiCommands;
 
@@ -20,30 +18,25 @@ namespace AssetEditor
         {
             serviceCollection.AddScoped<MainWindow>();
             serviceCollection.AddScoped<MainViewModel>();
-            serviceCollection.AddScoped<IEditorCreator, EditorCreator>();
+            serviceCollection.AddSingleton<IEditorCreator>( x=> x.GetRequiredService<IEditorManager>());
+            serviceCollection.AddSingleton<IEditorManager, EditorManager>();
 
-            serviceCollection.AddTransient<DeepSearchCommand>();
-            serviceCollection.AddTransient<GenerateReportCommand>();
             serviceCollection.AddTransient<OpenGamePackCommand>();
             serviceCollection.AddTransient<OpenPackFileCommand>();
             serviceCollection.AddTransient<OpenSettingsDialogCommand>();
             serviceCollection.AddTransient<OpenWebpageCommand>();
             serviceCollection.AddTransient<OpenEditorCommand>();
-            serviceCollection.AddTransient<OpenFileInEditorCommand>();
-            serviceCollection.AddTransient<OpenFileInWindowedEditorCommand>();
 
             serviceCollection.AddTransient<SettingsWindow>();
             serviceCollection.AddScoped<SettingsViewModel>();
             serviceCollection.AddScoped<MenuBarViewModel>();
 
-            // Dev Config stuff
-            serviceCollection.AddScoped<SceneObjectBuilder>();
-            serviceCollection.AddTransient<SceneObject>();
-            serviceCollection.AddScoped<AnimationPlayerViewModel>();
-            serviceCollection.AddScoped<SceneObjectViewModelBuilder>();
-            serviceCollection.AddScoped<EditorHostView>();
+            serviceCollection.AddScoped<MainWindow>();
 
-            serviceCollection.AddTransient<DevelopmentConfigurationManager>();
+            serviceCollection.AddSingleton<RecentFilesTracker>();
+
+            serviceCollection.AddScoped<IExceptionInformationProvider, CurrentEditorExceptionInfoProvider>();
+
             RegisterAllAsInterface<IDeveloperConfiguration>(serviceCollection, ServiceLifetime.Transient);
         }
     }

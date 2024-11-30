@@ -1,10 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -25,16 +19,18 @@ using Shared.Ui.Editors.TextEditor;
 
 namespace CommonControls.Editors.AnimationPack
 {
-    public class AnimPackViewModel : NotifyPropertyChangedImpl, IEditorViewModel, ISaveableEditor
+    public class AnimPackViewModel : NotifyPropertyChangedImpl, IEditorInterface, ISaveableEditor, IFileEditor
     {
-        PackFileService _pfs;
-        SkeletonAnimationLookUpHelper _skeletonAnimationLookUpHelper;
-        ITextConverter _activeConverter;
-        ApplicationSettingsService _appSettings;
-        public NotifyAttr<string> DisplayName { get; set; } = new NotifyAttr<string>("");
+        private readonly IPackFileService _pfs;
+        private readonly SkeletonAnimationLookUpHelper _skeletonAnimationLookUpHelper;
+        private ITextConverter _activeConverter;
+        private readonly ApplicationSettingsService _appSettings;
+        private readonly IFileSaveService _packFileSaveService;
+ 
+
+        public string DisplayName { get; set; } = "Not set";
 
         PackFile _packFile;
-        public PackFile MainFile { get => _packFile; set { _packFile = value; Load(); } }
 
         public FilterCollection<IAnimationPackFile> AnimationPackItems { get; set; }
 
@@ -46,12 +42,13 @@ namespace CommonControls.Editors.AnimationPack
         public ICommand RenameCommand { get; set; }
         public ICommand CopyFullPathCommand { get; set; }
 
-        public AnimPackViewModel(PackFileService pfs, SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper, ApplicationSettingsService appSettings)
+        public AnimPackViewModel(IPackFileService pfs, SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper, ApplicationSettingsService appSettings, IFileSaveService packFileSaveService)
         {
             _pfs = pfs;
             _skeletonAnimationLookUpHelper = skeletonAnimationLookUpHelper;
             _appSettings = appSettings;
-
+            _packFileSaveService = packFileSaveService;
+ 
             AnimationPackItems = new FilterCollection<IAnimationPackFile>(new List<IAnimationPackFile>(), ItemSelected, BeforeItemSelected)
             {
                 SearchFilter = (value, rx) => { return rx.Match(value.FileName).Success; }
@@ -94,7 +91,7 @@ namespace CommonControls.Editors.AnimationPack
             var animPack = AnimationPackSerializer.Load(_packFile, _pfs);
             var itemNames = animPack.Files.ToList();
             AnimationPackItems.UpdatePossibleValues(itemNames);
-            DisplayName.Value = animPack.FileName;
+            DisplayName = animPack.FileName;
         }
 
         string GetAnimSetFileName()
@@ -102,7 +99,7 @@ namespace CommonControls.Editors.AnimationPack
             var window = new TextInputWindow("Fragment name", "");
             if (window.ShowDialog() == true)
             {
-                var filename = SaveHelper.EnsureEnding(window.TextValue, ".frg");
+                var filename = SaveUtility.EnsureEnding(window.TextValue, ".frg");
                 return filename;
             }
 
@@ -154,22 +151,26 @@ namespace CommonControls.Editors.AnimationPack
                 SelectedItemViewModel.TextEditor?.SetSyntaxHighlighting("XML");
                 SelectedItemViewModel.Text = "";
                 SelectedItemViewModel.ResetChangeLog();
-                return;
+            }
+            else
+            {
+                SelectedItemViewModel = new SimpleTextEditorViewModel();
+                SelectedItemViewModel.SaveCommand = new RelayCommand(() => SaveActiveFile());
+                SelectedItemViewModel.TextEditor?.ShowLineNumbers(true);
+                SelectedItemViewModel.TextEditor?.SetSyntaxHighlighting(_activeConverter.GetSyntaxType());
+                SelectedItemViewModel.Text = _activeConverter.GetText(seletedFile.ToByteArray());
+                SelectedItemViewModel.ResetChangeLog();
             }
 
-            SelectedItemViewModel = new SimpleTextEditorViewModel();
-            SelectedItemViewModel.SaveCommand = new RelayCommand(() => SaveActiveFile());
-            SelectedItemViewModel.TextEditor?.ShowLineNumbers(true);
-            SelectedItemViewModel.TextEditor?.SetSyntaxHighlighting(_activeConverter.GetSyntaxType());
-            SelectedItemViewModel.Text = _activeConverter.GetText(seletedFile.ToByteArray());
-            SelectedItemViewModel.ResetChangeLog();
         }
         public void Close() { }
         public bool HasUnsavedChanges { get; set; }
 
+        public PackFile CurrentFile => _packFile;
+
         public bool SaveActiveFile()
         {
-            if (MainFile == null)
+            if (_packFile == null)
             {
                 MessageBox.Show("Can not save in this mode - Open the file normally");
                 return false;
@@ -201,7 +202,7 @@ namespace CommonControls.Editors.AnimationPack
 
         public bool Save()
         {
-            if (MainFile == null)
+            if (_packFile == null)
             {
                 MessageBox.Show("Can not save in this mode - Open the file normally");
                 return false;
@@ -213,14 +214,14 @@ namespace CommonControls.Editors.AnimationPack
                     return false;
             }
 
-            var newAnimPack = new AnimationPackFile(_pfs.GetFullPath(MainFile));
+            var newAnimPack = new AnimationPackFile(_pfs.GetFullPath(_packFile));
 
             foreach (var file in AnimationPackItems.PossibleValues)
                 newAnimPack.AddFile(file);
 
-            var savePath = _pfs.GetFullPath(MainFile);
+            var savePath = _pfs.GetFullPath(_packFile);
 
-            var result = SaveHelper.Save(_pfs, savePath, null, AnimationPackSerializer.ConvertToBytes(newAnimPack));
+            var result = _packFileSaveService.Save(savePath, AnimationPackSerializer.ConvertToBytes(newAnimPack), false);
             if (result != null)
             {
                 HasUnsavedChanges = false;
@@ -299,32 +300,38 @@ namespace CommonControls.Editors.AnimationPack
             File.WriteAllText(path, sb.ToString());
         }
 
-        public static void ShowPreviewWinodow(PackFile animationPackFile, PackFileService pfs, SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper, string selectedFileName, ApplicationSettingsService applicationSettings)
+       //public static void ShowPreviewWinodow(PackFile animationPackFile, PackFileService pfs, SkeletonAnimationLookUpHelper skeletonAnimationLookUpHelper, string selectedFileName, ApplicationSettingsService applicationSettings)
+       //{
+       //    if (animationPackFile == null)
+       //    {
+       //        MessageBox.Show("Unable to resolve packfile");
+       //        return;
+       //    }
+       //
+       //    var controller = new AnimPackViewModel(pfs, skeletonAnimationLookUpHelper, applicationSettings);
+       //    controller._packFile = animationPackFile;
+       //    controller.Load();
+       //
+       //    var containingWindow = new Window();
+       //    containingWindow.Title = animationPackFile.Name;
+       //
+       //
+       //    containingWindow.DataContext = controller;
+       //    containingWindow.Content = new AnimationPackView();
+       //
+       //    containingWindow.Width = 1200;
+       //    containingWindow.Height = 1100;
+       //
+       //
+       //    containingWindow.Loaded += (sender, e) => controller.SetSelectedFile(selectedFileName);
+       //
+       //    containingWindow.ShowDialog();
+       //}
+
+        public void LoadFile(PackFile file)
         {
-            if (animationPackFile == null)
-            {
-                MessageBox.Show("Unable to resolve packfile");
-                return;
-            }
-
-            var controller = new AnimPackViewModel(pfs, skeletonAnimationLookUpHelper, applicationSettings);
-            controller.MainFile = animationPackFile;
-            controller.Load();
-
-            var containingWindow = new Window();
-            containingWindow.Title = animationPackFile.Name;
-
-
-            containingWindow.DataContext = controller;
-            containingWindow.Content = new AnimationPackView();
-
-            containingWindow.Width = 1200;
-            containingWindow.Height = 1100;
-
-
-            containingWindow.Loaded += (sender, e) => controller.SetSelectedFile(selectedFileName);
-
-            containingWindow.ShowDialog();
+            _packFile = file;
+            Load();
         }
     }
 }

@@ -7,9 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Editors.Audio.Storage;
 using Serilog;
 using Shared.Core.ErrorHandling;
-using Shared.Core.Misc;
 using Shared.Core.PackFiles;
-using Shared.Core.PackFiles.Models;
 using Shared.Core.ToolCreation;
 using static Editors.Audio.AudioEditor.AudioEditorViewModelHelpers;
 
@@ -28,15 +26,15 @@ namespace Editors.Audio.AudioEditor.ViewModels
         }
     }
 
-    public partial class AudioEditorSettingsViewModel : ObservableObject, IEditorViewModel
+    public partial class AudioEditorSettingsViewModel : ObservableObject, IEditorInterface
     {
         private readonly IAudioRepository _audioRepository;
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         private readonly AudioEditorViewModel _audioEditorViewModel;
         readonly ILogger _logger = Logging.Create<AudioEditorSettingsViewModel>();
         private Action _closeAction;
 
-        public NotifyAttr<string> DisplayName { get; set; } = new NotifyAttr<string>("Audio Editor");
+        [ObservableProperty] string _displayName = "Audio Editor";
 
         [ObservableProperty] private string _audioProjectFileName = "my_audio_project";
         [ObservableProperty] private string _customStatesFileName = "my_custom_states";
@@ -52,7 +50,7 @@ namespace Editors.Audio.AudioEditor.ViewModels
 
         public static List<string> AudioProjectDialogueEvents => AudioEditorData.Instance.AudioProjectDialogueEvents;
 
-        public AudioEditorSettingsViewModel(IAudioRepository audioRepository, PackFileService packFileService, AudioEditorViewModel audioEditorViewModel)
+        public AudioEditorSettingsViewModel(IAudioRepository audioRepository, IPackFileService packFileService, AudioEditorViewModel audioEditorViewModel)
         {
             _audioRepository = audioRepository;
             _packFileService = packFileService;
@@ -226,10 +224,5 @@ namespace Editors.Audio.AudioEditor.ViewModels
         {
         }
 
-        public bool Save() => true;
-
-        public PackFile MainFile { get; set; }
-
-        public bool HasUnsavedChanges { get; set; } = false;
     }
 }

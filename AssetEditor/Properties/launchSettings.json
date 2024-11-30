@@ -48,5 +48,26 @@
       "commandName": "Project",
       "commandLineArgs": "-devcfg Kitbash_Karl_WH2",
       "nativeDebugging": false
+    },
+    "AE-SkeletonTool": {
+      "commandName": "Project",
+      "commandLineArgs": "-devcfg SkeletonTool",
+      "nativeDebugging": false
+    },
+    "AE-AnimMeta": {
+      "commandName": "Project",
+      "commandLineArgs": "-devcfg AnimMetaTool",
+      "nativeDebugging": false
+    },
+    "AE-Export-Karl": {
+      "commandName": "Project",
+      "commandLineArgs": "-devcfg Export_Karl",
+      "nativeDebugging": false
+    },
+    "AE-Kitbash-Import": {
+      "commandName": "Project",
+      "commandLineArgs": "-devcfg Kitbash_Import",
+      "nativeDebugging": false
     }
   }
+}

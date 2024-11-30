@@ -1,12 +1,10 @@
-﻿using System.Linq;
-using Editors.Shared.Core.Common.AnimationPlayer;
+﻿using Editors.Shared.Core.Common.AnimationPlayer;
 using Editors.Shared.Core.Common.BaseControl;
 using Editors.Shared.Core.Common.ReferenceModel;
 using Editors.Shared.Core.Services;
 using Microsoft.Xna.Framework;
 using Shared.Core.Events;
 using Shared.Core.PackFiles;
-using Shared.Core.ToolCreation;
 
 namespace Editors.Shared.Core.Common
 {
@@ -14,29 +12,35 @@ namespace Editors.Shared.Core.Common
     {
         private readonly AnimationPlayerViewModel _animationPlayerViewModel;
         private readonly IMetaDataFactory _metaDataFactory;
-        private readonly SceneObjectBuilder _assetViewModelBuilder;
-        private readonly IToolFactory _toolFactory;
-        private readonly PackFileService _pfs;
+        private readonly SceneObjectEditor _sceneObjectEditor;
+        private readonly IPackFileService _pfs;
         private readonly SkeletonAnimationLookUpHelper _skeletonHelper;
         private readonly IUiCommandFactory _uiCommandFactory;
+        private readonly IPackFileUiProvider _packFileUiProvider;
 
-        public SceneObjectViewModelBuilder(AnimationPlayerViewModel animationPlayerViewModel, IMetaDataFactory metaDataFactory, SceneObjectBuilder assetViewModelBuilder,
-            IToolFactory toolFactory, PackFileService pfs, SkeletonAnimationLookUpHelper skeletonHelper, IUiCommandFactory uiCommandFactory)
+        public SceneObjectViewModelBuilder(
+            AnimationPlayerViewModel animationPlayerViewModel, 
+            IMetaDataFactory metaDataFactory,
+            SceneObjectEditor assetViewModelBuilder,
+            IPackFileService pfs, 
+            SkeletonAnimationLookUpHelper skeletonHelper, 
+            IUiCommandFactory uiCommandFactory,
+            IPackFileUiProvider packFileUiProvider)
         {
             _animationPlayerViewModel = animationPlayerViewModel;
             _metaDataFactory = metaDataFactory;
-            _assetViewModelBuilder = assetViewModelBuilder;
-            _toolFactory = toolFactory;
+            _sceneObjectEditor = assetViewModelBuilder;
             _pfs = pfs;
             _skeletonHelper = skeletonHelper;
             _uiCommandFactory = uiCommandFactory;
+            _packFileUiProvider = packFileUiProvider;
         }
 
         public SceneObjectViewModel CreateAsset(bool createByDefault, string header, Color skeletonColour, AnimationToolInput input, bool allowMetaData = false)
         {
-            var mainAsset = _assetViewModelBuilder.CreateAsset(header, skeletonColour);
-            var returnObj = new SceneObjectViewModel(_uiCommandFactory, _metaDataFactory, _toolFactory, _pfs, mainAsset, header + ":", _assetViewModelBuilder, _skeletonHelper);
-            returnObj.AllowMetaData.Value = allowMetaData;
+            var mainAsset = _sceneObjectEditor.CreateAsset(header, skeletonColour);
+            var returnObj = new SceneObjectViewModel(_uiCommandFactory, _metaDataFactory, _pfs, _packFileUiProvider, mainAsset, header + ":", _sceneObjectEditor, _skeletonHelper);
+            returnObj.AllowMetaData = allowMetaData;
 
             if (createByDefault)
             {
@@ -45,10 +49,10 @@ namespace Editors.Shared.Core.Common
                 if (input != null)
                 {
                     if (input.Mesh != null)
-                        _assetViewModelBuilder.SetMesh(mainAsset, input.Mesh);
+                        _sceneObjectEditor.SetMesh(mainAsset, input.Mesh);
 
                     if (input.Animation != null)
-                        _assetViewModelBuilder.SetAnimation(mainAsset, _skeletonHelper.FindAnimationRefFromPackFile(input.Animation, _pfs));
+                        _sceneObjectEditor.SetAnimation(mainAsset, _skeletonHelper.FindAnimationRefFromPackFile(input.Animation));
 
                     if (input.FragmentName != null)
                     {

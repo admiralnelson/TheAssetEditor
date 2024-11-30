@@ -24,12 +24,28 @@ namespace Editors.AnimationTextEditors
             RegisterBatchConverter(services);
         }
 
-        public override void RegisterTools(IToolFactory factory)
+        public override void RegisterTools(IEditorDatabase database)
         {
-            factory.RegisterTool<AnimPackViewModel, AnimationPackView>(new ExtensionToTool(EditorEnums.AnimationPack_Editor, new[] { ".animpack" }));
-            factory.RegisterTool<TextEditorViewModel<CampaignAnimBinToXmlConverter>, TextEditorView>(new PathToTool(EditorEnums.XML_Editor, ".bin", @"animations\campaign\database"));
-            factory.RegisterTool<TextEditorViewModel<AnimFileToTextConverter>, TextEditorView>(new ExtensionToTool(EditorEnums.XML_Editor, new[] { ".anim" }));
-            factory.RegisterTool<TextEditorViewModel<InvMatrixToTextConverter>, TextEditorView>(new ExtensionToTool(EditorEnums.XML_Editor, new[] { ".bone_inv_trans_mats" }));
+            EditorInfoBuilder
+                .Create<AnimPackViewModel, AnimationPackView>(EditorEnums.AnimationPack_Editor)
+                .AddExtention(".animpack", EditorPriorites.High)
+                .Build(database);
+
+            EditorInfoBuilder
+                .Create<TextEditorViewModel<CampaignAnimBinToXmlConverter>, TextEditorView>(EditorEnums.XML_CampaginBin_Edtior)
+                .AddExtention(".bin", EditorPriorites.High)
+                .ValidForFoldersContaining(@"animations\campaign\database")
+                .Build(database);
+        
+            EditorInfoBuilder
+                .Create<TextEditorViewModel<AnimFileToTextConverter>, TextEditorView>(EditorEnums.XML_Anim_Editor)
+                .AddExtention(".anim", EditorPriorites.Default)
+                .Build(database);
+
+            EditorInfoBuilder
+                .Create<TextEditorViewModel<InvMatrixToTextConverter>, TextEditorView>(EditorEnums.XML_InvBoneEditor)
+                .AddExtention(".bone_inv_trans_mats", EditorPriorites.Default)
+                .Build(database);
         }
 
         private static void RegisterCampaignAnimBin(IServiceCollection services)

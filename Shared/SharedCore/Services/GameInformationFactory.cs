@@ -19,7 +19,32 @@
         Pharaoh
     }
 
-    public class GameInformation
+   //public enum PreferedShaderGroup
+   //{ }
+   //
+   //public enum  PreferedRmvVersion
+   //{
+   //    
+   //}
+   //
+   //public enum PreferedWsModelVersion
+   //{ }
+   //
+   //public enum PreferedAnimationBinVersion
+   //{ }
+   //
+    /*
+     
+     RegisterShader(PreferedShaderGroup.Wh3)
+        .Shader("path", shaderEnum)
+        .AddCapability<TCap, TWsModelSerializer, TRmvSerializer>();
+     
+     
+     
+     
+     */
+
+    public class GameInformation // Convert to record
     {
         public GameTypeEnum Type { get; set; }
         public string DisplayName { get; set; }
@@ -76,6 +101,7 @@
                 GameTypeEnum.Warhammer3 => "Warhammer III",
                 GameTypeEnum.Troy => "Troy",
                 GameTypeEnum.Pharaoh => "Pharaoh",
+                _ => throw new Exception($"Unknown game - {game}"),
             };
         }
     }

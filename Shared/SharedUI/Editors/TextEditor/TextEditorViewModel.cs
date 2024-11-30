@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using CommonControls.Editors.TextEditor;
 using CommunityToolkit.Mvvm.Input;
@@ -18,25 +14,28 @@ namespace Shared.Ui.Editors.TextEditor
         void SetEditor(ITextEditor theEditor);
     }
 
-    public class TextEditorViewModel<TextConverter> : NotifyPropertyChangedImpl, ITextEditorViewModel, IEditorViewModel
+    public class TextEditorViewModel<TextConverter> : NotifyPropertyChangedImpl, ITextEditorViewModel, IEditorInterface, IFileEditor
         where TextConverter : ITextConverter
     {
         public ICommand SaveCommand { get; set; }
 
-        public NotifyAttr<string> DisplayName { get; set; } = new NotifyAttr<string>();
+        public string DisplayName { get; set; } = "Not set";
 
         string _text;
         public string Text { get => _text; set => SetAndNotify(ref _text, value); }
 
         PackFile _packFile;
-        PackFileService _pf;
+        private readonly IFileSaveService _packFileSaveService;
+        private readonly IPackFileService _pf;
 
         ITextEditor _textEditor;
         TextConverter _converter;
 
-        public TextEditorViewModel(PackFileService pf, TextConverter converter)
+        public TextEditorViewModel(IFileSaveService packFileSaveService, IPackFileService pf, TextConverter converter)
         {
             _converter = converter;
+      
+            _packFileSaveService = packFileSaveService;
             _pf = pf;
             SaveCommand = new RelayCommand(() => Save());
         }
@@ -59,10 +58,18 @@ namespace Shared.Ui.Editors.TextEditor
             }
         }
 
+        public void LoadFile(PackFile file)
+        {
+            _packFile = file;
+            SetCurrentPackFile(_packFile);
+        }
+        public PackFile CurrentFile => _packFile;
+
+
         void SetCurrentPackFile(PackFile packedFile)
         {
             var file = packedFile;
-            DisplayName.Value = file.Name;
+            DisplayName = file.Name;
 
             var data = file.DataSource.ReadData();
             Text = _converter.GetText(data);
@@ -89,7 +96,7 @@ namespace Shared.Ui.Editors.TextEditor
                 }
             }
 
-            var res = SaveHelper.Save(_pf, path, MainFile, bytes);
+            var res = _packFileSaveService.Save(path, bytes, false);
             if (res != null)
                 MainFile = res;
             return false;
@@ -98,8 +105,6 @@ namespace Shared.Ui.Editors.TextEditor
         public void Close()
         {
         }
-
-        public bool HasUnsavedChanges { get; set; }
     }
 
 

@@ -17,53 +17,65 @@ namespace GameWorld.Core.Services
     public class ComplexMeshLoader
     {
         private readonly ILogger _logger = Logging.Create<ComplexMeshLoader>();
-        private readonly PackFileService _packFileService;
+        private readonly IPackFileService _packFileService;
         private readonly Rmv2ModelNodeLoader _rmv2ModelNodeLoader;
 
-        public ComplexMeshLoader(Rmv2ModelNodeLoader rmv2ModelNodeLoader, PackFileService packFileService)
+        public ComplexMeshLoader(Rmv2ModelNodeLoader rmv2ModelNodeLoader, IPackFileService packFileService)
         {
             _packFileService = packFileService;
             _rmv2ModelNodeLoader = rmv2ModelNodeLoader;
         }
 
-        public SceneNode Load(PackFile file, SceneNode parent, AnimationPlayer player)
+        public SceneNode Load(PackFile file, SceneNode parent, AnimationPlayer player, bool onlyLoadRootNode)
         {
-            return Load(file, parent, player, null);
+            return Load(file, parent, player, null, onlyLoadRootNode);
         }
 
-        public SceneNode Load(PackFile file, AnimationPlayer player)
+        public SceneNode Load(PackFile file, AnimationPlayer player, bool onlyLoadRootNode)
         {
-            return Load(file, null, player, null);
+            return Load(file, null, player, null, onlyLoadRootNode);
         }
 
-        SceneNode Load(PackFile file, SceneNode parent, AnimationPlayer player, string attachmentPointName)
+        SceneNode Load(PackFile file, SceneNode parent, AnimationPlayer player, string attachmentPointName, bool onlyLoadRootNode)
         {
-            if (file == null)
-                throw new Exception("File is null in SceneLoader::Load");
-
-            _logger.Here().Information($"Attempting to load file {file.Name}");
-
-            switch (file.Extention)
+            try
             {
-                case ".variantmeshdefinition":
-                    LoadVariantMesh(file, ref parent, player, attachmentPointName);
-                    break;
+                if (file == null)
+                    throw new Exception("File is null in SceneLoader::Load");
 
-                case ".rigid_model_v2":
-                    LoadRigidMesh(file, ref parent, player, attachmentPointName);
-                    break;
+                _logger.Here().Information($"Attempting to load file {file.Name}");
 
-                case ".wsmodel":
-                    LoadWsModel(file, ref parent, player, attachmentPointName);
-                    break;
-                default:
-                    throw new Exception("Unknown mesh extention");
+                switch (file.Extention)
+                {
+                    case ".variantmeshdefinition":
+                        LoadVariantMesh(file, ref parent, player, attachmentPointName, onlyLoadRootNode);
+                        break;
+
+                    case ".rigid_model_v2":
+                        LoadRigidMesh(file, ref parent, player, attachmentPointName, onlyLoadRootNode);
+                        break;
+
+                    case ".wsmodel":
+                        LoadWsModel(file, ref parent, player, attachmentPointName, onlyLoadRootNode);
+                        break;
+                    default:
+                        throw new Exception("Unknown mesh extention");
+                }
+
+                return parent;
             }
+            catch (Exception e)
+            {
+                var packFileOwner = _packFileService.GetPackFileContainer(file);
+                var errorMessage = $"Failed to load file : '{file.Name}' from '{packFileOwner?.Name}' - IsCa:{packFileOwner?.IsCaPackFile}";
+                _logger.Here().Error(errorMessage);
+                _logger.Here().Error("Error : " + e.ToString());
 
-            return parent;
+                throw new Exception(errorMessage, e);
+            }
         }
 
-        void Load(string path, SceneNode parent, AnimationPlayer player, string attachmentPointName)
+        void Load(string path, SceneNode parent, AnimationPlayer player, string attachmentPointName, bool onlyLoadRootNode)
         {
             var file = _packFileService.FindFile(path);
             if (file == null)
@@ -72,11 +84,11 @@ namespace GameWorld.Core.Services
                 return;
             }
 
-            Load(file, parent, player, attachmentPointName);
+            Load(file, parent, player, attachmentPointName, onlyLoadRootNode);
         }
 
 
-        void LoadVariantMesh(PackFile file, ref SceneNode parent, AnimationPlayer player, string attachmentPointName)
+        void LoadVariantMesh(PackFile file, ref SceneNode parent, AnimationPlayer player, string attachmentPointName, bool onlyLoadRootNode)
         {
             var variantMeshElement = new VariantMeshNode(file.Name);
             if (parent == null)
@@ -84,37 +96,29 @@ namespace GameWorld.Core.Services
             else
                 parent.AddObject(variantMeshElement);
 
-            try
-            {
-                var meshFile = VariantMeshToXmlConverter.Load(file);
-                LoadVariantMesh(meshFile, variantMeshElement, player, attachmentPointName);
-            }
-            catch (Exception e)
-            {
-                _logger.Here().Error("Failed to load file : " + file.Name);
-                _logger.Here().Error("Error : " + e.ToString());
-                throw;
-            }
+            
+            var meshFile = VariantMeshToXmlConverter.Load(file);
+            LoadVariantMesh(meshFile, variantMeshElement, player, attachmentPointName, onlyLoadRootNode);
         }
 
-        void LoadVariantMesh(VariantMesh mesh, SceneNode root, AnimationPlayer player, string attachmentPointName)
+        void LoadVariantMesh(VariantMesh mesh, SceneNode root, AnimationPlayer player, string attachmentPointName, bool onlyLoadRootNode)
         {
             if (mesh.ChildSlots.Count != 0)
                 root = root.AddObject(new SlotsNode("Slots"));
 
             // Load model
             if (string.IsNullOrWhiteSpace(mesh.ModelReference) != true)
-                Load(mesh.ModelReference.ToLower(), root, player, attachmentPointName);
+                Load(mesh.ModelReference.ToLower(), root, player, attachmentPointName, onlyLoadRootNode);
 
             foreach (var slot in mesh.ChildSlots)
             {
                 var slotNode = root.AddObject(new SlotNode(slot.Name + " " + slot.AttachmentPoint, slot.AttachmentPoint));
 
                 foreach (var childMesh in slot.ChildMeshes)
-                    LoadVariantMesh(childMesh, slotNode, player, attachmentPointName);
+                    LoadVariantMesh(childMesh, slotNode, player, attachmentPointName, onlyLoadRootNode);
 
                 foreach (var meshReference in slot.ChildReferences)
-                    Load(meshReference.Reference.ToLower(), slotNode, player, slot.AttachmentPoint);
+                    Load(meshReference.Reference.ToLower(), slotNode, player, slot.AttachmentPoint, onlyLoadRootNode);
 
                 for (var i = 0; i < slotNode.Children.Count(); i++)
                 {
@@ -130,13 +134,14 @@ namespace GameWorld.Core.Services
             }
         }
 
-        Rmv2ModelNode LoadRigidMesh(PackFile file, ref SceneNode parent, AnimationPlayer player, string attachmentPointName, WsModelFile? wsModel = null)
+        Rmv2ModelNode LoadRigidMesh(PackFile file, ref SceneNode parent, AnimationPlayer player, string attachmentPointName, bool onlyLoadRootNode, WsModelFile? wsModel = null)
         {
             var rmvModel = ModelFactory.Create().Load(file.DataSource.ReadData());
 
             var modelFullPath = _packFileService.GetFullPath(file);
             var modelNode = new Rmv2ModelNode(Path.GetFileName(file.Name));
-            var lodNodes = _rmv2ModelNodeLoader.CreateModelNodesFromFile(rmvModel, modelFullPath, player, wsModel);
+            var lodNodes = _rmv2ModelNodeLoader.CreateModelNodesFromFile(rmvModel, modelFullPath, player, onlyLoadRootNode, wsModel);
+
             foreach (var lodNode in lodNodes)
                 modelNode.AddObject(lodNode);
 
@@ -148,11 +153,10 @@ namespace GameWorld.Core.Services
             else
                 parent.AddObject(modelNode);
 
-
             return modelNode;
         }
 
-        void LoadWsModel(PackFile file, ref SceneNode parent, AnimationPlayer player, string attachmentPointName)
+        void LoadWsModel(PackFile file, ref SceneNode parent, AnimationPlayer player, string attachmentPointName, bool onlyLoadRootNode)
         {
             var wsModelNode = new WsModelGroup("WsModel - " + file.Name);
             if (parent == null)
@@ -165,7 +169,7 @@ namespace GameWorld.Core.Services
             {
                 var modelFile = _packFileService.FindFile(wsMaterial.GeometryPath);
                 var modelAsBase = wsModelNode as SceneNode;
-                var loadedModelNode = LoadRigidMesh(modelFile, ref modelAsBase, player, attachmentPointName, wsMaterial);
+                var loadedModelNode = LoadRigidMesh(modelFile, ref modelAsBase, player, attachmentPointName, onlyLoadRootNode, wsMaterial);
             }
         }
     }
