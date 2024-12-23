@@ -47,7 +47,8 @@ namespace GameWorld.Core.Rendering.Materials.Serialization
         public string ProsessMaterial(string modelFilePath, string meshName, UiVertexFormat meshVertexFormat, CapabilityMaterial material)
         {
             var templateEditor = new WsMaterialTemplateEditor(material, _preferedGameHint);
-            var fileName = templateEditor.AddTemplateHeader(meshName, meshVertexFormat, material);
+            var isThisPharaoh = _preferedGameHint == GameTypeEnum.Pharaoh;
+            var fileName = templateEditor.AddTemplateHeader(meshName, meshVertexFormat, material, isThisPharaoh);
 
             foreach (var cap in material.Capabilities)
                 cap.SerializeToWsModel(templateEditor);

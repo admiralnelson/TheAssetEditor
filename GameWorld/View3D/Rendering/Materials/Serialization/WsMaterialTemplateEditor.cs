@@ -53,7 +53,7 @@ namespace GameWorld.Core.Rendering.Materials.Serialization
             return _templateBuffer!;
         }
 
-        public string AddTemplateHeader(string meshName, UiVertexFormat vertexFormat, CapabilityMaterial capabilityMaterial)
+        public string AddTemplateHeader(string meshName, UiVertexFormat vertexFormat, CapabilityMaterial capabilityMaterial, bool isThisPharaoh)
         {
             var alphaShaderPart = "";
             var alphaNamePart = "off";
@@ -68,7 +68,7 @@ namespace GameWorld.Core.Rendering.Materials.Serialization
             var materialVertexFormatStr = vertexFormat switch
             {
                 UiVertexFormat.Static => "rigid",
-                UiVertexFormat.Cinematic => "weighted4",
+                UiVertexFormat.Cinematic => (isThisPharaoh) ? "weighted4" : "weighted2",
                 UiVertexFormat.Weighted => "weighted2",
                 _ => throw new Exception("Unknown vertex type")
             };

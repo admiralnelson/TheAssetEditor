@@ -34,7 +34,7 @@ namespace Editors.AnimationVisualEditors
         {
             EditorInfoBuilder
                 .Create<EditorHost<MountAnimationCreatorViewModel>, EditorHostView>(EditorEnums.MountTool_Editor)
-                .AddToToolbar("Mount Tool", false)
+                .AddToToolbar("Mount Tool", true)
                 .Build(database);
       
             EditorInfoBuilder
@@ -49,7 +49,7 @@ namespace Editors.AnimationVisualEditors
         
             EditorInfoBuilder
               .Create<EditorHost<AnimationKeyframeEditorViewModel>, EditorHostView>(EditorEnums.AnimationKeyFrame_Editor)
-              .AddToToolbar("KeyFrame Tool", false)
+              .AddToToolbar("KeyFrame Tool", true)
               .Build(database);
         }
     }
